@@ -4,6 +4,8 @@ import { Button, Table, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../assets/css/Admin.css";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const AdminPage = () => {
   const [images, setImages] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -26,37 +28,37 @@ const AdminPage = () => {
   }, []);
 
   const fetchImages = async () => {
-    const res = await axios.get("http://localhost:5000/api/admin/images");
+    const res = await axios.get(`${API_URL}/api/admin/images`);
     setImages(res.data);
   };
 
   const fetchReviews = async () => {
-    const res = await axios.get("http://localhost:5000/api/admin/reviews");
+    const res = await axios.get(`${API_URL}/admin/reviews`);
     setReviews(res.data);
   };
 
   const fetchBookings = async () => {
-    const res = await axios.get("http://localhost:5000/api/admin/bookings");
+    const res = await axios.get(`${API_URL}/admin/bookings`);
     setBookings(res.data);
   };
 
   const fetchAvailability = async () => {
-    const res = await axios.get("http://localhost:5000/api/admin/dates");
+    const res = await axios.get(`${API_URL}/admin/dates`);
     setDates(res.data);
   };
 
   const handleDeleteImage = async (id) => {
-    await axios.delete(`http://localhost:5000/api/admin/images/${id}`);
+    await axios.delete(`${API_URL}/admin/images/${id}`);
     fetchImages();
   };
 
   const handleRespondBooking = async (id, response) => {
-    await axios.put(`http://localhost:5000/api/admin/bookings/${id}`, { response });
+    await axios.put(`${API_URL}/admin/bookings/${id}`, { response });
     fetchBookings();
   };
 
   const handleUpdateAvailability = async () => {
-    await axios.put("http://localhost:5000/api/admin/dates", dates);
+    await axios.put(`${API_URL}/admin/dates`, dates);
   };
 
   return (

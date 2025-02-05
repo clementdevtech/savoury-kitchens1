@@ -3,6 +3,8 @@ import axios from "axios";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "../assets/css/ForgotPassword.css";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -12,7 +14,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     if (countdown > 0) return; 
     try {
-      const res = await axios.post("http://localhost:5000/api/forgot-password", { email });
+      const res = await axios.post(`${API_URL}/forgot-password`, { email });
       setMessage(res.data.message);
       setCountdown(3600); 
     } catch (err) {

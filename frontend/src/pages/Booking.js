@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../assets/css/Booking.css';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const BookingPage = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [openDays, setOpenDays] = useState([]);
@@ -14,7 +16,7 @@ const BookingPage = () => {
 
   useEffect(() => {
     // Fetch available dates and open days from backend
-    axios.get('http://localhost:5000/api/available-dates')
+    axios.get(`${API_URL}/available-dates`)
       .then((response) => {
         setAvailableDates(response.data.dates);
         setOpenDays(response.data.openDays);
@@ -34,7 +36,7 @@ const BookingPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios.post('http://localhost:5000/api/bookings', formData)
+    axios.post(`${API_URL}/bookings`, formData)
       .then(() => {
         alert('Booking successful!');
         setFormData({

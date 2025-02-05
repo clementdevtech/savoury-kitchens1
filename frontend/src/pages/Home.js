@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../assets/css/style.css";
 import BookingPage from "./Booking";
 import axios from "axios";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Home = () => {
   const [reviews, setReviews] = useState([]);
@@ -13,12 +14,12 @@ const Home = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/reviews")
+      .get(`${API_URL}/reviews`)
       .then((response) => setReviews(response.data))
       .catch((error) => console.error("Error fetching reviews:", error));
 
     // Fetch gallery images
-    fetch("http://localhost:5000/api/gallery")
+    fetch(`${API_URL}/gallery`)
       .then((response) => response.json())
       .then((data) => {
         const groupedImages = data.reduce((acc, image) => {
@@ -114,7 +115,7 @@ const Home = () => {
         <form className="mt-4" onSubmit={(e) => {
           e.preventDefault();
           axios
-            .post("http://localhost:5000/api/reviews", { text: newReview })
+            .post(`${API_URL}/reviews`, { text: newReview })
             .then((response) => {
               setReviews([...reviews, response.data]);
               setNewReview("");

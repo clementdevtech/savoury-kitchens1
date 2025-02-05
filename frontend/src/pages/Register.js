@@ -8,6 +8,8 @@ import { ProgressBar, Button } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Register = () => {
   const [user, setUser] = useState({ email: "", name: "", password: "", confirmPassword: "", code: "" });
   const [error, setError] = useState("");
@@ -73,7 +75,7 @@ const Register = () => {
   const sendVerificationCode = useCallback(async () => {
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000//api/email/verify-email", { email: user.email });
+      await axios.post(`${API_URL}/email/verify-email`, { email: user.email });
       setCodeSent(true);
       setLoading(false);
     } catch (err) {
@@ -86,7 +88,7 @@ const Register = () => {
     e.preventDefault();
     if (validateStep()) {
       try {
-        const res = await axios.post("http://localhost:5000//api/auth/register", user);
+        const res = await axios.post(`${API_URL}/auth/register`, user);
         alert(res.data.message);
         navigate("/email-verification");
       } catch (err) {

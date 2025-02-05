@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -7,48 +7,52 @@ const Testimonials = () => {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [message, setMessage] = useState('');
-  const [userId, setUserId] = useState(''); 
+  const API_URL = process.env.REACT_APP_API_URL;
 
-  // Fetch testimonials from the server
-  const fetchTestimonials = async () => {
+
+  const fetchTestimonials = useCallback(async () => {
     setLoading(true);
+    setError(null); 
     try {
-      const response = await fetch(`http://localhost:5000/api/testimonials/gettestimonials?offset=${offset}`);
+      const response = await fetch(`${API_URL}/testimonials/gettestimonials?offset=${offset}`);
+      if (!response.ok) throw new Error('Failed to fetch testimonials');
+      
       const data = await response.json();
       if (Array.isArray(data)) {
         setTestimonials((prevTestimonials) => [...prevTestimonials, ...data]);
-        setHasMore(data.length > 0); 
+        setHasMore(data.length > 0);
       }
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching testimonials:', error);
       setError('Failed to load testimonials');
+    } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL, offset]); // Added dependencies to avoid useEffect warnings
 
-
+  // Handle submitting a testimonial
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!message) {
+    if (!message.trim()) {
       setError('Message cannot be empty');
       return;
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/testimonials/addtestimonial', {
+      const response = await fetch(`${API_URL}/testimonials/addtestimonial`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, message }),
+        body: JSON.stringify({ message }),
       });
 
       if (response.ok) {
         const newTestimonial = await response.json();
         setTestimonials((prevTestimonials) => [newTestimonial, ...prevTestimonials]);
         setMessage('');
+        setError(null);
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to submit testimonial');
@@ -61,7 +65,7 @@ const Testimonials = () => {
 
   useEffect(() => {
     fetchTestimonials();
-  }, [offset]);
+  }, [fetchTestimonials]); // Fix useEffect dependency issue
 
   const handleNext = () => {
     setOffset((prevOffset) => prevOffset + 3); 

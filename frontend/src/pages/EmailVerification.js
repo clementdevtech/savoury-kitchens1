@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 import { Button } from "react-bootstrap";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const EmailVerification = () => {
   const [code, setCode] = useState("");
@@ -15,7 +16,7 @@ const EmailVerification = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/verify-email", { code });
+      const res = await axios.post(`${API_URL}/verify-email`, { code });
       alert(res.data.message);
       navigate("/login");
     } catch (err) {

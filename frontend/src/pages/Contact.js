@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Contact = () => {
   const [contact, setContact] = useState({ email: '', phone: '', address: '' });
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/contact')
+    fetch(`${API_URL}/contact`)
       .then(response => response.json())
       .then(data => setContact(data))
       .catch(error => console.error('Error fetching contact:', error));

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Gallery = () => {
   const [images, setImages] = useState({});
   
   useEffect(() => {
-    fetch('http://localhost:5000/api/gallery/getimages')
+    fetch(`${API_URL}/gallery/getimages`)
       .then(response => response.json())
       .then(data => {
         const groupedImages = data.reduce((acc, image) => {

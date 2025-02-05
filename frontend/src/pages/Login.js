@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import "../assets/css/Login.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Login = () => {
   const [user, setUser] = useState({ email: "", password: "" });
@@ -19,7 +20,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/login", user);
+      const res = await axios.post(`${API_URL}/login`, user);
       alert(res.data.message);
       navigate("/dashboard");
     } catch (err) {
