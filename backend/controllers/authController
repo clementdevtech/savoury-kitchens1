@@ -1,0 +1,58 @@
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { Pool } = require("../db");
+const { sendVerificationEmail, sendPasswordRecoveryEmail } = require("./emailController");
+require("dotenv").config();
+
+const generateToken = (user) => {
+  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1h" });
+};
+
+const register = async (req, res) => {
+  const { email, name, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query(
+      "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING *",
+      [email, name, hashedPassword]
+    );
+
+    await sendVerificationEmail(email);
+    res.json({ message: "User registered! Please verify your email." });
+  } catch (err) {
+    res.status(500).json({ message: "Error registering user" });
+  }
+};
+
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
+
+    const validPassword = await bcrypt.compare(password, user.rows[0].password);
+    if (!validPassword) return res.status(400).json({ message: "Invalid credentials" });
+
+    if (!user.rows[0].verified) return res.status(400).json({ message: "Email not verified" });
+
+    const token = generateToken(user.rows[0]);
+    res.json({ message: "Login successful", token });
+  } catch (err) {
+    res.status(500).json({ message: "Error logging in" });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const response = await sendPasswordRecoveryEmail(email);
+    if (response.error) {
+      return res.status(400).json({ message: response.error });
+    }
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ message: "Error sending recovery code" });
+  }
+};
+
+module.exports = { register, login, forgotPassword };

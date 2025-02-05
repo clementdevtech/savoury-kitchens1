@@ -1,0 +1,38 @@
+const knex = require('knex');
+const { Pool, Client} = require('pg');
+require('dotenv').config();
+
+// Knex setup
+const knexConfig = {
+  client: 'pg',
+  connection: {
+    host: process.env.dbhost,
+    port: process.env.dbport,
+    user: process.env.dbuser,
+    password: process.env.dbpassword,
+    database: process.env.dbname
+  }
+};
+
+const db = knex(knexConfig);
+
+// Pool setup
+const pool = new Pool({
+  host: process.env.dbhost,
+  port: process.env.dbport, 
+  user: process.env.dbuser, 
+  password: process.env.dbpassword, 
+  database: process.env.dbname 
+});
+
+const client = new Client({
+  host: process.env.dbhost,
+  port: process.env.dbport, 
+  user: process.env.dbuser, 
+  password: process.env.dbpassword, 
+  database: process.env.dbname 
+});
+
+client.connect();
+
+module.exports = { db, pool, client };
