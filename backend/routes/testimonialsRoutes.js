@@ -1,16 +1,12 @@
-const express = require("express");
-const reviewController = require("../controllers/reviewController");
-
+// routes/testimonialsRoutes.js
+const express = require('express');
 const router = express.Router();
+const testimonialsController = require("../controllers/reviewController");
 
-// Debugging log
-console.log("Review Controller:", reviewController);
+// Route to get testimonials with pagination
+router.get('/gettestimonials', testimonialsController.getTestimonials);
 
-
-if (!reviewController.getReviews) {
-  console.error("❌ Error: getReviews function is undefined in reviewController.js");
-}
-
-router.get("/", reviewController.getReviews); // Ensure this function is correctly defined
+// Route to add a new testimonial
+router.post('/addtestimonial', testimonialsController.addTestimonial);
 
 module.exports = router;

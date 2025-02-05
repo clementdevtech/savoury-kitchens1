@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -17,11 +17,13 @@ const Register = () => {
   const [countdown, setCountdown] = useState(60);
   const [attempts, setAttempts] = useState(5);
   const [formErrors, setFormErrors] = useState({});
+  const [codeSent, setCodeSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
-    setFormErrors({ ...formErrors, [e.target.name]: "" }); // Clear error on input change
+    setFormErrors({ ...formErrors, [e.target.name]: "" });
   };
 
   const validateStep = () => {
@@ -33,16 +35,27 @@ const Register = () => {
     }
 
     if (step === 2) {
-      if (user.password.length < 6) errors.password = "Password must be at least 6 characters";
-      if (user.password !== user.confirmPassword) errors.confirmPassword = "Passwords do not match";
-    }
+      if (user.password.length < 8) {
+        errors.password = "Password must be at least 8 characters";
+      }
+    
+      const passwordComplexity = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=|,.<>/?]).{12,}$/;
+      if (!passwordComplexity.test(user.password)) {
+        errors.password = "Password must include at least one lowercase letter, one uppercase letter, one number, and one special character.";
+      }
 
-    if (step === 3) {
+      if (user.password !== user.confirmPassword) {
+        errors.confirmPassword = "Passwords do not match";
+      }
+    }
+    
+
+    if (step === 3 && codeSent) {
       if (!user.code.match(/^\d{6}$/)) errors.code = "Verification code must be 6 digits";
     }
 
     setFormErrors(errors);
-    return Object.keys(errors).length === 0; // Proceed only if no errors
+    return Object.keys(errors).length === 0;
   };
 
   const nextStep = () => {
@@ -52,14 +65,28 @@ const Register = () => {
   };
 
   const prevStep = () => setStep(step - 1);
+
   const togglePassword = () => setShowPassword(!showPassword);
   const toggleConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
+
+  
+  const sendVerificationCode = useCallback(async () => {
+    setLoading(true);
+    try {
+      await axios.post("http://localhost:5000//api/email/verify-email", { email: user.email });
+      setCodeSent(true);
+      setLoading(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send code");
+      setLoading(false);
+    }
+  }, [user.email]); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateStep()) {
       try {
-        const res = await axios.post("http://localhost:5000/api/register", user);
+        const res = await axios.post("http://localhost:5000//api/auth/register", user);
         alert(res.data.message);
         navigate("/email-verification");
       } catch (err) {
@@ -67,6 +94,29 @@ const Register = () => {
       }
     }
   };
+
+  const resendCode = () => {
+    if (attempts > 0 && countdown === 0) {
+      setCountdown(60);
+      setAttempts(attempts - 1);
+      sendVerificationCode();
+    }
+  };
+
+
+  useEffect(() => {
+    if (step === 3 && !codeSent) {
+      sendVerificationCode();
+    }
+  }, [step, codeSent, sendVerificationCode]);
+
+
+  useEffect(() => {
+    if (countdown > 0 && codeSent) {
+      const timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [countdown, codeSent]);
 
   return (
     <div className="register-container">
@@ -121,27 +171,30 @@ const Register = () => {
             )}
             {step === 3 && (
               <div>
-                <div className="mb-3">
-                  <label>Enter Verification Code:</label>
-                  <input type="text" name="code" className="form-control" onChange={handleChange} required />
-                  {formErrors.code && <p className="text-danger">{formErrors.code}</p>}
-                </div>
-                <p>Code expires in 10 minutes</p>
-                <p>Resend code in: {countdown} seconds</p>
-                {attempts > 0 && countdown === 0 && (
-                  <Button onClick={() => {
-                    if (attempts > 0) {
-                      setCountdown(60);
-                      setAttempts(attempts - 1);
-                    }
-                  }}>
-                    Resend Code ({attempts} attempts left)
-                  </Button>
+                {loading ? (
+                  <p>Sending verification code...</p>
+                ) : codeSent ? (
+                  <>
+                    <div className="mb-3">
+                      <label>Enter Verification Code:</label>
+                      <input type="text" name="code" className="form-control" onChange={handleChange} required />
+                      {formErrors.code && <p className="text-danger">{formErrors.code}</p>}
+                    </div>
+                    <p>Code expires in 10 minutes</p>
+                    <p>Resend code in: {countdown} seconds</p>
+                    {attempts > 0 && countdown === 0 && (
+                      <Button onClick={resendCode}>
+                        Resend Code ({attempts} attempts left)
+                      </Button>
+                    )}
+                    <div className="d-flex justify-content-between mt-3">
+                      <Button onClick={prevStep}>Back</Button>
+                      <Button type="submit" className="btn btn-primary">Verify</Button>
+                    </div>
+                  </>
+                ) : (
+                  <p>Waiting for verification code...</p>
                 )}
-                <div className="d-flex justify-content-between mt-3">
-                  <Button onClick={prevStep}>Back</Button>
-                  <Button type="submit" className="btn btn-primary">Verify</Button>
-                </div>
               </div>
             )}
           </form>

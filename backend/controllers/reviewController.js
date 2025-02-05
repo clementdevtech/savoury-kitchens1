@@ -1,26 +1,56 @@
-const { pool } = require("../db");
+// controllers/testimonialsController.js
+const { pool } = require('../db');
 
-// Get all reviews
-const getReviews = async (req, res) => {
+
+const getTestimonials = async (req, res) => {
+  const offset = parseInt(req.query.offset) || 0;
+  const limit = 3; 
+
   try {
-    const reviews = await pool.query("SELECT * FROM testimonials ORDER BY created_at DESC");
-    res.json(reviews.rows.length ? reviews.rows : []); // Ensure an array is always returned
+    const query = `
+      SELECT testimonials.id, testimonials.message, testimonials.created_at, users.username
+      FROM testimonials
+      JOIN users ON testimonials.user_id = users.id
+      ORDER BY testimonials.created_at DESC
+      LIMIT $1 OFFSET $2;
+    `;
+    const values = [limit, offset];
+
+    const result = await pool.query(query, values);
+    const testimonials = result.rows;
+
+    res.status(200).json(testimonials);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching testimonials" });
+    console.error('Error fetching testimonials:', err.message);
+    res.status(500).json({ error: 'Failed to fetch testimonials' });
   }
 };
 
 
-// Add a new review
-const addReview = async (req, res) => {
-  const { name, message } = req.body;
+const addTestimonial = async (req, res) => {
+  const { userId, message } = req.body;
+
+  if (!userId || !message) {
+    return res.status(400).json({ error: 'User ID and message are required' });
+  }
+
   try {
-    await pool.query("INSERT INTO testimonials (name, message) VALUES ($1, $2)", [name, message]);
-    res.json({ message: "Review added successfully!" });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to add review" });
+    const query = `
+      INSERT INTO testimonials (user_id, message) 
+      VALUES ($1, $2) 
+      RETURNING id, user_id, message, created_at;
+    `;
+    const values = [userId, message];
+
+    const result = await pool.query(query, values);
+    const newTestimonial = result.rows[0];
+
+    res.status(201).json(newTestimonial);
+  } catch (err) {
+    console.error('Error saving testimonial:', err);
+    res.status(500).json({ error: 'Failed to save testimonial' });
   }
 };
 
-// Ensure correct export
-module.exports = { getReviews, addReview };
+module.exports = { getTestimonials, addTestimonial };
+

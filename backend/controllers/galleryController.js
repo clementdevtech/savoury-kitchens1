@@ -1,4 +1,4 @@
-const { pool } = require('../db'); // ✅ Ensure correct import
+const { pool } = require('../db'); // Ensure correct import
 
 // Add Image with Category
 const addImage = async (req, res) => {
@@ -13,11 +13,13 @@ const addImage = async (req, res) => {
 
 // Get All Images
 const getImages = async (req, res) => {
+   console.log("getImages");
     try {
       const images = await pool.query("SELECT * FROM gallery");
       res.json(images.rows);
     } catch (err) {
       res.status(500).json({ message: "Error fetching gallery" });
+      console.log("Error in getting images:",err.message);
     }
 };
 

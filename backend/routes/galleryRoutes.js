@@ -6,7 +6,7 @@ const router = express.Router();
 router.post("/", addImage);
 
 // Route to Get All Images
-router.get("/", getImages);
+router.get("/getimages", getImages);
 
 // Route to Delete an Image
 router.delete("/:id", deleteImage);

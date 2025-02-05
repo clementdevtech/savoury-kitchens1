@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import "bootstrap/dist/css/bootstrap.min.css";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "../assets/css/Navbar.css";
 
 const Navbar = ({ user }) => {
@@ -15,14 +13,13 @@ const Navbar = ({ user }) => {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="nav-container">
+      <div className="container">
         <Link className="navbar-brand" to="/">netsafehub</Link>
         <span
           className="navbar-toggler" 
           type="button" 
-          onClick={toggleNavbar}
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarNav"
+          onClick={toggleNavbar} 
+          style={{ border: "none", outline: "none", padding: "5px" }}
         >
           <span className="navbar-toggler-icon"></span>
         </span>

@@ -24,7 +24,7 @@ const sendEmail = async (to, subject, text) => {
   }
 };
 
-// ✅ Send Email Verification Code
+
 const sendVerificationEmail = async (email) => {
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
   await pool.query(
@@ -88,7 +88,7 @@ const sendPasswordRecoveryEmail = async (email) => {
   }
 };
 
-// ✅ Verify Password Recovery Code
+//  Verify Password Recovery Code
 const verifyRecoveryCode = async (req, res) => {
   const { email, code } = req.body;
   try {

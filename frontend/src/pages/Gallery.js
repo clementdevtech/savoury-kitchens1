@@ -4,7 +4,7 @@ const Gallery = () => {
   const [images, setImages] = useState({});
   
   useEffect(() => {
-    fetch('http://localhost:5000/api/gallery')
+    fetch('http://localhost:5000/api/gallery/getimages')
       .then(response => response.json())
       .then(data => {
         const groupedImages = data.reduce((acc, image) => {
