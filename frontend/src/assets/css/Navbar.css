@@ -1,0 +1,85 @@
+/* Navbar */
+.navbar {
+    background: #343a40 !important;
+    padding: 12px 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar .navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ffc107 !important;
+    transition: color 0.3s ease-in-out;
+  }
+  .navbar .navbar-brand:hover {
+    color: #ffca28 !important;
+  }
+  
+  /* Navbar Links */
+  .navbar .nav-link {
+    color: #fff !important;
+    font-size: 1rem;
+    padding: 8px 15px;
+    transition: color 0.3s ease-in-out, background 0.3s ease-in-out;
+    border-radius: 5px;
+  }
+  .navbar .nav-link:hover {
+    color: #ffc107 !important;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Navbar Toggler */
+
+  .navbar-toggler {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  
+  .navbar-toggler:hover {
+    outline: 3px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  .navbar-toggler-icon {
+    width: 40px; 
+    height: 30px;
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .navbar-toggler:focus {
+    box-shadow: none;
+  }
+
+
+  /* Responsive Design */
+@media screen and (max-width: 768px) {
+    .navbar {
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 9px 10px;
+    }
+    .navbar .navbar-collapse {
+      background: #343a40;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .navbar .nav-link {
+      font-size: 14px;
+      text-align: center;
+      display: block;
+    }
+    .navbar-toggler{
+      position: absolute;
+      margin-left: 40vw;
+    }
+
+    .navbar-toggler-icon {
+      width: 30px; 
+      height: 20px;
+      border-radius: 8px;
+      padding: 8px;
+    }
+  }
