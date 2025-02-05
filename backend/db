@@ -1,38 +1,22 @@
-const knex = require('knex');
-const { Pool, Client} = require('pg');
-require('dotenv').config();
+const knex = require("knex");
+const { Pool } = require("pg");
+require("dotenv").config();
+
+const databaseUrl = process.env.DATABASE_URL || `postgresql://${process.env.dbuser}:${process.env.dbpassword}@${process.env.dbhost}:${process.env.dbport}/${process.env.dbname}`;
 
 // Knex setup
-const knexConfig = {
-  client: 'pg',
+const db = knex({
+  client: "pg",
   connection: {
-    host: process.env.dbhost,
-    port: process.env.dbport,
-    user: process.env.dbuser,
-    password: process.env.dbpassword,
-    database: process.env.dbname
-  }
-};
+    connectionString: databaseUrl,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  },
+});
 
-const db = knex(knexConfig);
-
-// Pool setup
+// PostgreSQL Pool setup
 const pool = new Pool({
-  host: process.env.dbhost,
-  port: process.env.dbport, 
-  user: process.env.dbuser, 
-  password: process.env.dbpassword, 
-  database: process.env.dbname 
+  connectionString: databaseUrl,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
-const client = new Client({
-  host: process.env.dbhost,
-  port: process.env.dbport, 
-  user: process.env.dbuser, 
-  password: process.env.dbpassword, 
-  database: process.env.dbname 
-});
-
-client.connect();
-
-module.exports = { db, pool, client };
+module.exports = { db, pool };
