@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const { Pool } = require("../db");
+const { pool } = require("../db");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
@@ -35,9 +35,16 @@ const sendVerificationEmail = async (email) => {
   await sendEmail(email, "Email Verification Code", `Your verification code is ${verificationCode}. It expires in 10 minutes.`);
 };
 
-// ✅ Verify Email
+// Verify Email
 const verifyEmail = async (req, res) => {
+  console.log("Received verification request:", req.body);
+
   const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ message: "Email and code are required." });
+  }
+
   try {
     const result = await pool.query(
       "SELECT * FROM email_verifications WHERE email = $1 AND code = $2 AND expires_at > NOW()",
@@ -53,13 +60,18 @@ const verifyEmail = async (req, res) => {
 
     res.json({ message: "Email verified successfully!" });
   } catch (err) {
+    console.log("Error verifying email:", err);
     res.status(500).json({ message: "Error verifying email" });
   }
 };
 
-// ✅ Send Password Recovery Code (Expires in 10 Minutes, Can Resend Every 60 Minutes)
-const sendPasswordRecoveryEmail = async (email) => {
+//Send Password Recovery Code (Expires in 10 Minutes, Can Resend Every 60 Minutes)
+const sendPasswordRecoveryEmail = async (req, res) => {
+  console.log("Sending verification request:", req.body);
+
+  const { email } = req.body;
   try {
+    console.log('sending verification code to the email:', email);
     const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (user.rows.length === 0) {
       return { error: "User not found" };
