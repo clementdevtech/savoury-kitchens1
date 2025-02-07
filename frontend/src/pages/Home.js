@@ -66,9 +66,9 @@ const Home = () => {
     <>
       <section className="hero">
         <div className="screen text-center text-white">
-          <h1>Welcome to Savoury Kitchens Events</h1>
+          <h1>Welcome to Savoury Kitchens</h1>
           <p>
-            Providing top-tier catering, event decoration, public address, and
+            We provide top-tier catering, event decoration, public address, and
             event planning services.
           </p>
         </div>
