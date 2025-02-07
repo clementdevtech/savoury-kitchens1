@@ -49,6 +49,8 @@ const Register = () => {
       if (user.password !== user.confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
+
+      sendVerificationCode();
     }
     
 
@@ -75,7 +77,7 @@ const Register = () => {
   const sendVerificationCode = useCallback(async () => {
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/email/verify-email`, { email: user.email });
+      await axios.post(`${API_URL}/email/sendcode`, { email: user.email });
       setCodeSent(true);
       setLoading(false);
     } catch (err) {
@@ -84,6 +86,22 @@ const Register = () => {
     }
   }, [user.email]); 
 
+
+
+  const handleVerifyEmail = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/email/verify-email`, {
+        email: user.email,
+        code: user.code, 
+      });
+
+      alert(res.data.message);
+      navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Verification failed");
+    }
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateStep()) {
@@ -96,21 +114,25 @@ const Register = () => {
       }
     }
   };
-
+  // Resend code function
   const resendCode = () => {
     if (attempts > 0 && countdown === 0) {
       setCountdown(60);
       setAttempts(attempts - 1);
+      console.log('sending verification code to the email:', user.email);
       sendVerificationCode();
     }
   };
 
-
+  // Countdown timer effect
   useEffect(() => {
-    if (step === 3 && !codeSent) {
-      sendVerificationCode();
+    if (countdown > 0) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
     }
-  }, [step, codeSent, sendVerificationCode]);
+  }, [countdown]);
 
 
   useEffect(() => {
@@ -172,32 +194,40 @@ const Register = () => {
               </div>
             )}
             {step === 3 && (
-              <div>
-                {loading ? (
-                  <p>Sending verification code...</p>
-                ) : codeSent ? (
-                  <>
-                    <div className="mb-3">
-                      <label>Enter Verification Code:</label>
-                      <input type="text" name="code" className="form-control" onChange={handleChange} required />
-                      {formErrors.code && <p className="text-danger">{formErrors.code}</p>}
-                    </div>
-                    <p>Code expires in 10 minutes</p>
-                    <p>Resend code in: {countdown} seconds</p>
-                    {attempts > 0 && countdown === 0 && (
-                      <Button onClick={resendCode}>
-                        Resend Code ({attempts} attempts left)
-                      </Button>
-                    )}
-                    <div className="d-flex justify-content-between mt-3">
-                      <Button onClick={prevStep}>Back</Button>
-                      <Button type="submit" className="btn btn-primary">Verify</Button>
-                    </div>
-                  </>
-                ) : (
-                  <p>Waiting for verification code...</p>
-                )}
-              </div>
+             <div>
+             {loading ? (
+               <p>Sending verification code...</p>
+             ) : codeSent ? (
+               <>
+                 <div className="mb-3">
+                   <label>Enter Verification Code:</label>
+                   <input
+                     type="text"
+                     name="code"
+                     className="form-control"
+                     onChange={(e) => setUser({ ...user, code: e.target.value })}
+                     required
+                   />
+                   {error && <p className="text-danger">{error}</p>}
+                 </div>
+                 <p>Code expires in 10 minutes</p>
+                 <p>Resend code in: {countdown} seconds</p>
+                 {attempts > 0 && countdown === 0 && (
+                   <Button onClick={resendCode}>
+                     Resend Code ({attempts} attempts left)
+                   </Button>
+                 )}
+                 <div className="d-flex justify-content-between mt-3">
+                   <Button onClick={prevStep}>Back</Button>
+                   <Button type="submit" className="btn btn-primary" onClick={handleVerifyEmail}>
+                     Verify
+                   </Button>
+                 </div>
+               </>
+             ) : (
+               <p>Waiting for verification code...</p>
+             )}
+           </div>
             )}
           </form>
         </div>

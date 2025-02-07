@@ -9,9 +9,13 @@ import Testimonials from './pages/Testimonials';
 import Contact from './pages/Contact';
 import Register from './pages/Register';
 import Login from './pages/Login';
+import Booking from './pages/Booking';
 import EmailVerification from "./pages/EmailVerification";
 import AdminPage from "./pages/AdminPage";
 import Recovery from "./pages/ForgotPassword";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AboutUs from "./pages/AboutUs";
 
 function App() {
   return (
@@ -25,9 +29,13 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/booking" element={<Booking />} />
         <Route path="/email-verification" element={<EmailVerification />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/forgot-password" element={<Recovery />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/about-us" element={<AboutUs />} />
       </Routes>
       <Footer />
     </Router>

@@ -92,17 +92,65 @@ body {
   background-color: #0056b3;
 }
 
-/* Footer (Always at Bottom) */
+/* Footer Styling */
 .footer {
   background: #222;
   color: white;
   text-align: center;
-  padding: 20px;
-  margin-top: auto;
+  padding: 1px;
   width: 100%;
-  position: fixed;
+  height: auto;
+  position: relative;
   bottom: 0;
-  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Footer Links */
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.footer-links a {
+  color: #f8d210;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+/* Social Media Links */
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.social-links a {
+  color: white;
+  font-size: 20px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.social-links a:hover {
+  transform: scale(1.2);
+  color: #f8d210;
+}
+
+/* Copyright */
+.copyright {
+  font-size: 12px;
+  margin-top: 10px;
+  opacity: 0.8;
+  bottom: 0;
 }
 
 /* Smooth Fade-in Animation */
@@ -121,5 +169,21 @@ body {
   }
   .row {
     flex-direction: column;
+  }
+
+  .footer {
+    padding: 20px;
+  }
+
+  .footer-links {
+    gap: 8px;
+  }
+
+  .social-links {
+    gap: 10px;
+  }
+
+  .social-links a {
+    font-size: 18px;
   }
 }

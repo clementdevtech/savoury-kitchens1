@@ -1,4 +1,8 @@
 /* Navbar */
+ .navbar-logo {
+    height: 40px;  
+    width: auto;
+ }
   .navbar-brand {
     font-size: 1.5rem;
     font-weight: bold;
@@ -18,4 +22,10 @@
   .navbar-toggler:hover {
     outline: 3px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+
+  @media screen and (max-width: 768px) {
+    .ms-2{
+      display: none;
+    }
   }
