@@ -9,6 +9,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 const API_URL = process.env.REACT_APP_API_URL;
+console.log("API_URL:", process.env.REACT_APP_API_URL);
+
 
 const Register = () => {
   const [user, setUser] = useState({ email: "", name: "", password: "", confirmPassword: "", code: "" });
@@ -75,6 +77,7 @@ const Register = () => {
 
   
   const sendVerificationCode = useCallback(async () => {
+    console.log('sending code');
     setLoading(true);
     try {
       await axios.post(`${API_URL}/email/sendcode`, { email: user.email });

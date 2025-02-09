@@ -26,7 +26,7 @@ const TermsOfService = () => {
 
       <h2>4. Cancellation Policy</h2>
       <p>
-        Cancellations must be made at least 48 hours before the scheduled event. Late cancellations may result in a fee.
+        Cancellations must be made at least 2 weeks before the scheduled event. Late cancellations may result in a fee.
       </p>
 
       <h2>5. Liability</h2>
