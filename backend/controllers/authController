@@ -1,58 +1,135 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { Pool } = require("../db");
+const {pool, db} = require("../db");
 const { sendVerificationEmail, sendPasswordRecoveryEmail } = require("./emailController");
 require("dotenv").config();
 
 const generateToken = (user) => {
-  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign(
+    { id: user.id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 };
 
 const register = async (req, res) => {
   const { email, name, password } = req.body;
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await pool.query(
-      "INSERT INTO users (email, username, password) VALUES ($1, $2, $3) RETURNING *",
-      [email, name, hashedPassword]
-    );
 
-    await sendVerificationEmail(email);
-    res.json({ message: "User registered! Please verify your email." });
-  } catch (err) {
-    res.status(500).json({ message: "Error registering user" });
+  try {
+    // Check if email or username exists
+    const existingUser = await db("users")
+      .where("email", email)
+      .orWhere("username", name)
+      .first();
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Email or Username already exists",
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert new user (set verified to false initially)
+    await db("users").insert({
+      email,
+      username: name,
+      password: hashedPassword,
+      verified: false,
+    });
+
+    return res.status(201).json({
+      message: "User registered successfully. Proceed to verification.",
+    });
+  } catch (error) {
+    console.error("Registration Error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const check_user = async (req, res) => {
+ 
+  try {
+    const { email, name } = req.body;
+    console.log("checking:", email, name);
+
+    if (!email || !name) {
+      return res.status(400).json({ message: "Email and username are required" });
+    }
+
+    // Query the database to check if email or username already exists
+    const user = await db("users")
+      .where("email", email)
+      .orWhere("username", name)
+      .first();
+
+    if (user) {
+      if (user.email === email && user.name === name) {
+        return res.status(409).json({ message: "Email and Username already exist" });
+      } else if (user.email === email) {
+        return res.status(409).json({ message: "Email already exists" });
+      } else {
+        return res.status(409).json({ message: "Username already exists" });
+      }
+    }
+
+    res.json({ exists: false });
+  } catch (error) {
+    console.error("Error checking user:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 const login = async (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required." });
+  }
   try {
     const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (user.rows.length === 0) return res.status(400).json({ message: "User not found" });
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
     const validPassword = await bcrypt.compare(password, user.rows[0].password);
-    if (!validPassword) return res.status(400).json({ message: "Invalid credentials" });
+    if (!validPassword) {
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
 
-    if (!user.rows[0].verified) return res.status(400).json({ message: "Email not verified" });
+    if (!user.rows[0].verified) {
+      return res.status(403).json({ message: "Email not verified. Please check your inbox." });
+    }
 
     const token = generateToken(user.rows[0]);
-    res.json({ message: "Login successful", token });
+    res.status(200).json({ message: "Login successful.", token });
   } catch (err) {
-    res.status(500).json({ message: "Error logging in" });
+    console.error("Login Error:", err);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "Email is required." });
+  }
   try {
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
     const response = await sendPasswordRecoveryEmail(email);
     if (response.error) {
       return res.status(400).json({ message: response.error });
     }
-    res.json(response);
+
+    res.status(200).json(response);
   } catch (err) {
-    res.status(500).json({ message: "Error sending recovery code" });
+    console.error("Forgot Password Error:", err);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
-module.exports = { register, login, forgotPassword };
+module.exports = { register, check_user, login, forgotPassword };

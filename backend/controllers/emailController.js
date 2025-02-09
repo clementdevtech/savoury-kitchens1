@@ -1,7 +1,15 @@
 const nodemailer = require("nodemailer");
 const { pool } = require("../db");
+const crypto = require("crypto");
 require("dotenv").config();
 
+// Load environment variables
+const CLIENT_URL = process.env.CLIENT_URL;
+const COMPANY_NAME = process.env.COMPANY_NAME;
+const COMPANY_LOGO = process.env.COMPANY_LOGO;
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL;
+
+// Email transporter configuration
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -10,113 +18,173 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (to, subject, text) => {
+// **Reusable function to send emails**
+const sendEmail = async (to, subject, htmlContent) => {
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `${COMPANY_NAME} <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text,
+      html: htmlContent,
     });
-    console.log("Email sent successfully");
+    console.log(`✅ Email sent successfully to ${to}`);
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error(`❌ Error sending email: ${error.message}`);
   }
 };
 
-
-const sendVerificationEmail = async (email) => {
-  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-  await pool.query(
-    "INSERT INTO email_verifications (email, code, expires_at) VALUES ($1, $2, NOW() + INTERVAL '10 minutes')",
-    [email, verificationCode]
-  );
-
-  await sendEmail(email, "Email Verification Code", `Your verification code is ${verificationCode}. It expires in 10 minutes.`);
-};
-
-// Verify Email
-const verifyEmail = async (req, res) => {
-  console.log("Received verification request:", req.body);
-
-  const { email, code } = req.body;
-
-  if (!email || !code) {
-    return res.status(400).json({ message: "Email and code are required." });
-  }
-
-  try {
-    const result = await pool.query(
-      "SELECT * FROM email_verifications WHERE email = $1 AND code = $2 AND expires_at > NOW()",
-      [email, code]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Invalid or expired code." });
-    }
-
-    await pool.query("DELETE FROM email_verifications WHERE email = $1", [email]);
-    await pool.query("UPDATE users SET verified = true WHERE email = $1", [email]);
-
-    res.json({ message: "Email verified successfully!" });
-  } catch (err) {
-    console.log("Error verifying email:", err);
-    res.status(500).json({ message: "Error verifying email" });
-  }
-};
-
-//Send Password Recovery Code (Expires in 10 Minutes, Can Resend Every 60 Minutes)
-const sendPasswordRecoveryEmail = async (req, res) => {
-  console.log("Sending verification request:", req.body);
-
+// **Send Email Verification (Link + Code)**
+const sendVerificationEmail = async (req, res) => {
   const { email } = req.body;
+
+  if (!email || !email.match(/^\S+@\S+\.\S+$/)) {
+    return res.status(400).json({ message: "Invalid email format." });
+  }
+
   try {
-    console.log('sending verification code to the email:', email);
+    // Check if user exists
     const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     if (user.rows.length === 0) {
-      return { error: "User not found" };
+      return res.json({ message: "User not found. Redirecting to registration.", redirect: "/register" });
     }
 
-    const existingRequest = await pool.query(
-      "SELECT * FROM password_resets WHERE email = $1 AND expires_at > NOW() - INTERVAL '60 minutes'",
-      [email]
-    );
+    // Generate a short verification token & code
+    const verificationToken = crypto.randomUUID();
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
 
-    if (existingRequest.rows.length > 0) {
-      return { error: "You can only request a recovery code once every 60 minutes." };
-    }
+    // Hash the token & code for security
+    const hashedToken = crypto.createHash("sha256").update(verificationToken).digest("hex");
 
-    const recoveryCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Store both token and code in the database
     await pool.query(
-      "INSERT INTO password_resets (email, code, expires_at) VALUES ($1, $2, NOW() + INTERVAL '10 minutes') ON CONFLICT (email) DO UPDATE SET code = $2, expires_at = NOW() + INTERVAL '10 minutes'",
-      [email, recoveryCode]
+      `INSERT INTO email_verifications (email, token, code, expires_at) 
+       VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes') 
+       ON CONFLICT (email) 
+       DO UPDATE SET token = $2, code = $3, expires_at = NOW() + INTERVAL '10 minutes'`,
+      [email, hashedToken, verificationCode]
     );
 
-    await sendEmail(email, "Password Recovery Code", `Your recovery code is ${recoveryCode}. It expires in 10 minutes.`);
-    return { message: "Recovery code sent to email." };
+    // Create a clickable verification link
+    const verificationLink = `${CLIENT_URL}/email-verification?token=${verificationToken}&email=${email}`;
+
+    // HTML email template with both the link & the 6-digit code
+    const emailTemplate = `
+      <div style="background: #f8f9fa; padding: 20px; text-align: center;">
+        <img src="${COMPANY_LOGO}" alt="${COMPANY_NAME}" style="max-width: 150px; margin-bottom: 20px;">
+        <h2 style="color: #333;">Verify Your Email</h2>
+        <p style="font-size: 16px; color: #555;">
+          Click the button below to verify your email address and activate your account.
+        </p>
+        <a href="${verificationLink}" style="display: inline-block; padding: 12px 20px; font-size: 16px; 
+          color: #fff; background-color: #007bff; border-radius: 5px; text-decoration: none; font-weight: bold;">
+          Verify Email
+        </a>
+        <p style="font-size: 16px; color: #555;">Or enter this 6-digit code: <strong>${verificationCode}</strong></p>
+        <p style="font-size: 14px; color: #777; margin-top: 20px;">
+          This link and code will expire in 10 minutes. If you did not request this email, please ignore it.
+        </p>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 14px; color: #999;">
+          Need help? Contact us at <a href="mailto:${SUPPORT_EMAIL}" style="color: #007bff;">${SUPPORT_EMAIL}</a>
+        </p>
+      </div>
+    `;
+
+    await sendEmail(email, "Email Verification", emailTemplate);
+
+    res.json({ message: "Verification link & code sent to email." });
   } catch (error) {
-    console.error("Error sending password recovery email:", error);
-    return { error: "Error sending recovery email." };
+    console.error(`Error sending verification email: ${error.message}`);
+    res.status(500).json({ message: "Error sending verification email." });
   }
 };
 
-//  Verify Password Recovery Code
-const verifyRecoveryCode = async (req, res) => {
-  const { email, code } = req.body;
+// **Verify Email (Token or Code)**
+const verifyEmail = async (req, res) => {
+  const { token, email, code } = req.body;
+
+  if (!email || (!token && !code)) {
+    return res.status(400).json({ message: "Missing verification details." });
+  }
+
   try {
-    const result = await pool.query(
-      "SELECT * FROM password_resets WHERE email = $1 AND code = $2 AND expires_at > NOW()",
-      [email, code]
-    );
+    let query = "";
+    let param = "";
+
+    if (token) {
+      const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+      query = "SELECT * FROM email_verifications WHERE token = $1 AND email = $2 AND expires_at > NOW()";
+      param = hashedToken;
+    } else if (code) {
+      query = "SELECT * FROM email_verifications WHERE code = $1 AND email = $2 AND expires_at > NOW()";
+      param = code;
+    }
+
+    const result = await pool.query(query, [param, email]);
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Invalid or expired recovery code." });
+      return res.status(400).json({ message: "Invalid or expired token/code." });
     }
 
-    res.json({ message: "Recovery code verified! You may now reset your password." });
+    // Mark user as verified
+    await pool.query("UPDATE users SET verified = true WHERE email = $1", [email]);
+
+    // Prevent reuse
+    await pool.query("DELETE FROM email_verifications WHERE email = $1", [email]);
+
+    res.json({ message: "Email verified successfully! Redirecting to login.", redirect: "/login" });
   } catch (err) {
-    res.status(500).json({ message: "Error verifying recovery code" });
+    console.error(`Error verifying email: ${err.message}`);
+    res.status(500).json({ message: "Error verifying email." });
   }
 };
 
-module.exports = { sendEmail, sendVerificationEmail, verifyEmail, sendPasswordRecoveryEmail, verifyRecoveryCode };
+// **Send Password Recovery Email**
+const sendPasswordRecoveryEmail = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.match(/^\S+@\S+\.\S+$/)) {
+    return res.status(400).json({ message: "Invalid email format." });
+  }
+
+  try {
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Generate password reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    await pool.query(
+      `INSERT INTO password_resets (email, token, expires_at) 
+       VALUES ($1, $2, NOW() + INTERVAL '10 minutes') 
+       ON CONFLICT (email) 
+       DO UPDATE SET token = $2, expires_at = NOW() + INTERVAL '10 minutes'`,
+      [email, hashedToken]
+    );
+
+    const resetLink = `${CLIENT_URL}/reset-password?token=${resetToken}`;
+
+    const emailContent = `
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetLink}">Reset Password</a>
+      <p>This link will expire in 10 minutes.</p>
+    `;
+
+    await sendEmail(email, "Password Reset Request", emailContent);
+
+    res.json({ message: "Password reset link sent to email." });
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    res.status(500).json({ message: "Error sending password reset email." });
+  }
+};
+
+module.exports = {
+  sendEmail,
+  sendVerificationEmail,
+  verifyEmail,
+  sendPasswordRecoveryEmail,
+};
