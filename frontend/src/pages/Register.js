@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 const API_URL = process.env.REACT_APP_API_URL;
-console.log("API_URL:", process.env.REACT_APP_API_URL);
+
 
 
 const Register = () => {
@@ -23,6 +23,7 @@ const Register = () => {
   const [formErrors, setFormErrors] = useState({});
   const [codeSent, setCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [userExists, setUserExists] = useState(false); 
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -36,6 +37,7 @@ const Register = () => {
     if (step === 1) {
       if (!user.email.match(/^\S+@\S+\.\S+$/)) errors.email = "Invalid email format";
       if (user.name.trim().length < 3) errors.name = "Username must be at least 3 characters";
+      if (userExists) errors.email = "User already exists. Please login or use a different email.";
     }
 
     if (step === 2) {
@@ -75,6 +77,22 @@ const Register = () => {
   const togglePassword = () => setShowPassword(!showPassword);
   const toggleConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
 
+  const checkUserExists = useCallback(async () => {
+    if (user.email) {
+      try {
+        const res = await axios.post(`${API_URL}/auth/check-user`, {
+          email: user.email,
+          name: user.name,
+        });
+  
+        setUserExists(res.data.exists);
+        setError(res.data.exists ? "User already exists. Please login or use a different email." : "");
+      } catch (err) {
+        setError(err.response?.data?.message || "Error checking user");
+        setUserExists(true);
+      }
+    }
+  }, [user.email, user.name]);
   
   const sendVerificationCode = useCallback(async () => {
     console.log('sending code');
@@ -126,6 +144,16 @@ const Register = () => {
       sendVerificationCode();
     }
   };
+
+  useEffect(() => {
+    const delayCheck = setTimeout(() => {
+      if (user.email || user.name) {
+        checkUserExists();
+      }
+    }, 500); // Debounce API call
+  
+    return () => clearTimeout(delayCheck);
+  }, [user.email, user.name, checkUserExists]);
 
   // Countdown timer effect
   useEffect(() => {
