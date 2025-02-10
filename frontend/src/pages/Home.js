@@ -4,6 +4,7 @@ import "../assets/css/style.css";
 import BookingPage from "./Booking";
 import axios from "axios";
 const API_URL = process.env.REACT_APP_API_URL;
+console.log("API_URL:", process.env.REACT_APP_API_URL);
 
 const Home = () => {
   const [reviews, setReviews] = useState([]);
@@ -14,12 +15,12 @@ const Home = () => {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/reviews`)
+      .get(`${API_URL}/testimonials/gettestimonials`)
       .then((response) => setReviews(response.data))
       .catch((error) => console.error("Error fetching reviews:", error));
 
     // Fetch gallery images
-    fetch(`${API_URL}/gallery`)
+    fetch(`${API_URL}/gallery/getimages`)
       .then((response) => response.json())
       .then((data) => {
         const groupedImages = data.reduce((acc, image) => {
@@ -115,7 +116,7 @@ const Home = () => {
         <form className="mt-4" onSubmit={(e) => {
           e.preventDefault();
           axios
-            .post(`${API_URL}/reviews`, { text: newReview })
+            .post(`${API_URL}/testimonials/addtestimonial`, { text: newReview })
             .then((response) => {
               setReviews([...reviews, response.data]);
               setNewReview("");

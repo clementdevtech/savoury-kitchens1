@@ -16,7 +16,7 @@ const BookingPage = () => {
 
   useEffect(() => {
     // Fetch available dates and open days from backend
-    axios.get(`${API_URL}/available-dates`)
+    axios.get(`${API_URL}/availability/dates`)
       .then((response) => {
         setAvailableDates(response.data.dates);
         setOpenDays(response.data.openDays);

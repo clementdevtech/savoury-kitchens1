@@ -1,16 +1,21 @@
-const { pool } = require('../db');
-require("dotenv").config();
+const getUser = async (req, res) => {
+  console.log("Cookies Received:", req.cookies);
+  try {
+    console.log("Cookies Received:", req.cookies);
 
-
-
-// Ensure this function exists
-const getAllUsers = async (req, res) => {
-    try {
-      const users = await pool.query("SELECT id, email, username FROM users");
-      res.json(users.rows);
-    } catch (err) {
-      res.status(500).json({ message: "Error retrieving users" });
+    if (!req.user1) {
+      return res.status(401).json({ message: "Not authenticated" });
     }
-  };
 
-  module.exports = { getAllUsers };
+    
+    res.status(200).json({
+      id: req.user1.id,
+      email: req.user1.email,
+      role: req.user1.role
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+module.exports = { getUser };

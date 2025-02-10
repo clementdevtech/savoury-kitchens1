@@ -4,6 +4,7 @@ require("dotenv").config();
 // Get Availability
 const getAvailability = async (req, res) => {
   try {
+    console.log('dates');
     const availability = await pool.query("SELECT * FROM availability");
     res.json(availability.rows);
   } catch (err) {

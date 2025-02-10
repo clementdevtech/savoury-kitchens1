@@ -1,14 +1,15 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const {pool, db} = require("../db");
+//const rateLimit = require('express-rate-limit');
 const { sendVerificationEmail, sendPasswordRecoveryEmail } = require("./emailController");
 require("dotenv").config();
 
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { id: user.id, email: user.email, role: user.role }, 
+        process.env.JWT_SECRET,
+    { expiresIn: "7d" } 
   );
 };
 
@@ -80,34 +81,83 @@ const check_user = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+/*
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 5, 
+  message: 'Too many login attempts from this IP, please try again later.',
+});*/
 
+
+//................Login route
 const login = async (req, res) => {
   const { email, password } = req.body;
+  console.log("login:", email);
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required." });
+    return res.status(400).json({ error: 'Please provide email and password' });
   }
+
   try {
-    const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (user.rows.length === 0) {
-      return res.status(404).json({ message: "User not found." });
-    }
+      const user = await db('users')
+        .where('email', email)
+        .first();
 
-    const validPassword = await bcrypt.compare(password, user.rows[0].password);
-    if (!validPassword) {
-      return res.status(401).json({ message: "Invalid credentials." });
-    }
+      if (!user) {
+        return res.status(404).json({ error: 'Email not found' });
+      }
 
-    if (!user.rows[0].verified) {
-      return res.status(403).json({ message: "Email not verified. Please check your inbox." });
-    }
+      const token1 = req.cookies.token;
+      
+      if (token1) {
+        return jwt.verify(token1, process.env.JWT_SECRET, (err, decodedUser) => {
+          if (!err) {
+            return res.status(200).json({ message: 'Already logged in', user: decodedUser });
+          }
+        });
+      }
 
-    const token = generateToken(user.rows[0]);
-    res.status(200).json({ message: "Login successful.", token });
-  } catch (err) {
-    console.error("Login Error:", err);
-    res.status(500).json({ message: "Internal server error." });
+      /*if (!user.is_verified) {
+        return res.status(403).json({
+          error: 'Email not verified',
+          action: 'showVerificationSection',
+        });
+      }*/
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Invalid password' });
+      }
+
+      const { password: _, ...userWithoutPassword } = user;
+
+      const token = jwt.sign(
+        { ...userWithoutPassword, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.cookie('token', token, {
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      });
+
+      res.status(200).json({ message: 'Login successful' });
+
+  } catch (error) {
+    console.error('Error in login:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
+const logout = (req, res) => {
+  res.clearCookie("auth_token", { httpOnly: true, sameSite: "Strict", secure: process.env.NODE_ENV === "production" });
+  res.json({ message: "Logged out successfully" });
+};
+
+
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -132,4 +182,4 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, check_user, login, forgotPassword };
+module.exports = { register, check_user, login, logout, forgotPassword };
