@@ -107,7 +107,7 @@ const login = async (req, res) => {
       }
 
       const token1 = req.cookies.token;
-      
+      console.log("token1:", token1);
       if (token1) {
         return jwt.verify(token1, process.env.JWT_SECRET, (err, decodedUser) => {
           if (!err) {
@@ -140,8 +140,12 @@ const login = async (req, res) => {
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        path: '/',
+        sameSite: 'Strict',
+        path: '/'
       });
+
+      console.log("token1:", token1);
+
 
       res.status(200).json({ message: 'Login successful' });
 

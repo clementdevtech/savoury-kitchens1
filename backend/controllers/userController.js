@@ -1,9 +1,9 @@
 const getUser = async (req, res) => {
-  console.log("Cookies Received:", req.cookies);
+  console.log("Cookies Received:", req.user);
   try {
-    console.log("Cookies Received:", req.cookies);
+    console.log("Cookies Received:", req.user);
 
-    if (!req.user1) {
+    if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
