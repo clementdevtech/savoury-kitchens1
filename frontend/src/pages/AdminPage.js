@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { Button, Table, Form, Spinner, Alert } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -22,12 +22,45 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchData();
+  // ✅ Wrap API fetch calls inside `useCallback` to prevent unnecessary re-renders
+  const fetchImages = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/images`);
+      setImages(res.data);
+    } catch (err) {
+      console.error("Error fetching images:", err.message);
+    }
   }, []);
 
-  // Fetch all data
-  const fetchData = async () => {
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/gettestimonials`);
+      setReviews(res.data);
+    } catch (err) {
+      console.error("Error fetching reviews:", err.message);
+    }
+  }, []);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/bookings`);
+      setBookings(res.data);
+    } catch (err) {
+      console.error("Error fetching bookings:", err.message);
+    }
+  }, []);
+
+  const fetchAvailability = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/dates`);
+      setDates(res.data);
+    } catch (err) {
+      console.error("Error fetching availability:", err.message);
+    }
+  }, []);
+
+  // ✅ Fetch all data once when the component mounts
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([fetchImages(), fetchReviews(), fetchBookings(), fetchAvailability()]);
@@ -37,49 +70,14 @@ const AdminPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchImages, fetchReviews, fetchBookings, fetchAvailability]);
 
-  // Fetch images
-  const fetchImages = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/images`);
-      setImages(res.data);
-    } catch (err) {
-      console.error("Error fetching images:", err.message);
-    }
-  };
+  // ✅ Ensures `fetchData` runs only once when component mounts
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  // Fetch reviews
-  const fetchReviews = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/reviews`);
-      setReviews(res.data);
-    } catch (err) {
-      console.error("Error fetching reviews:", err.message);
-    }
-  };
-
-  // Fetch bookings
-  const fetchBookings = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/bookings`);
-      setBookings(res.data);
-    } catch (err) {
-      console.error("Error fetching bookings:", err.message);
-    }
-  };
-
-  // Fetch availability
-  const fetchAvailability = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/dates`);
-      setDates(res.data);
-    } catch (err) {
-      console.error("Error fetching availability:", err.message);
-    }
-  };
-
-  // Delete an image
+  // ✅ Handle image deletion and refresh images list
   const handleDeleteImage = async (id) => {
     try {
       await axios.delete(`${API_URL}/images/${id}`);
@@ -89,7 +87,7 @@ const AdminPage = () => {
     }
   };
 
-  // Respond to a booking
+  // ✅ Handle booking response (approve/reject)
   const handleRespondBooking = async (id, response) => {
     try {
       await axios.put(`${API_URL}/bookings/${id}`, { status: response });
@@ -99,11 +97,11 @@ const AdminPage = () => {
     }
   };
 
-  // Update availability
+  // ✅ Handle availability updates
   const handleUpdateAvailability = async () => {
     try {
       await axios.put(`${API_URL}/dates`, dates);
-      alert("Availability updated successfully!");
+      alert("✅ Availability updated successfully!");
     } catch (err) {
       console.error("Error updating availability:", err.message);
     }
