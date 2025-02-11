@@ -8,16 +8,18 @@ const PORT = process.env.PORT || 5000;
 
 // CORS Configuration
 const corsOptions = {
-    origin: process.env.CLIENT_URL, 
-    credentials: true, 
+    origin: process.env.CLIENT_URL,  
+    credentials: true,
     methods: "GET,POST,PUT,DELETE",
     allowedHeaders: "Content-Type,Authorization",
-};
+  };
+  app.use(cors(corsOptions));
+  
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors(corsOptions));  
+ 
 
 // Serve static files
 app.use(express.static('public'));

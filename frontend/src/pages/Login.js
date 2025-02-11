@@ -6,6 +6,7 @@ import "../assets/css/Login.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 const API_URL = process.env.REACT_APP_API_URL;
+console.log("API_URL:", API_URL);
 
 const Login = () => {
   const [user, setUser] = useState({ email: "", password: "" });
@@ -21,12 +22,14 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await axios.post(`${API_URL}/auth/login`, user);
+      localStorage.setItem("token", res.data.token);
       alert(res.data.message);
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
   };
+  
 
   const togglePassword = () => setShowPassword(!showPassword);
 

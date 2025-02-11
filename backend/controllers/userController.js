@@ -1,20 +1,23 @@
-const getUser = async (req, res) => {
-  console.log("Cookies Received:", req.user);
+const jwt = require("jsonwebtoken");
+
+const getUser = (req, res) => {
+  //console.log("Auth Header:", req.headers.authorization); 
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized, token missing" });
+  }
+
+  const token = authHeader.split(" ")[1]; 
+  //console.log("Extracted Token:", token); 
+
   try {
-    console.log("Cookies Received:", req.user);
-
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    
-    res.status(200).json({
-      id: req.user1.id,
-      email: req.user1.email,
-      role: req.user1.role
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Internal server error." });
+    const user = jwt.verify(token, process.env.JWT_SECRET);
+    //console.log("✅ Decoded User:", user); 
+    res.status(200).json(user);
+  } catch (error) {
+    //console.error("❌ JWT Verification Error:", error.message);
+    res.status(403).json({ message: "Invalid or expired token" });
   }
 };
 

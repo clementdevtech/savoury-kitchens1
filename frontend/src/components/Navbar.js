@@ -17,33 +17,34 @@ const Navbar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        if (!API_URL) {
-          console.error("API_URL is not defined. Check your .env file.");
-          setLoading(false);
+        setLoading(true); 
+    
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No token found");
+          setLoading(false); 
           return;
         }
-
+    
         const response = await fetch(`${API_URL}/users/getuser`, {
           method: "GET",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
         });
-
-        if (!response.ok) {
-          throw new Error("Unauthorized");
-        }
-
+    
+        if (!response.ok) throw new Error("Unauthorized");
+    
         const data = await response.json();
         setUser(data);
       } catch (err) {
         console.error("Authentication Error:", err);
         setUser(null);
       } finally {
-        setLoading(false); // Ensure loading is set to false after request completes
+        setLoading(false); 
       }
-    };
+    };    
 
     fetchUser();
   }, []);

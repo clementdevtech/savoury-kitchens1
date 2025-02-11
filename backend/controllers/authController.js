@@ -93,67 +93,47 @@ const loginLimiter = rateLimit({
 const login = async (req, res) => {
   const { email, password } = req.body;
   console.log("login:", email);
+
   if (!email || !password) {
-    return res.status(400).json({ error: 'Please provide email and password' });
+    return res.status(400).json({ error: "Please provide email and password" });
   }
 
   try {
-      const user = await db('users')
-        .where('email', email)
-        .first();
+    const user = await db("users").where("email", email).first();
+    if (!user) {
+      return res.status(404).json({ error: "Email not found" });
+    }
 
-      if (!user) {
-        return res.status(404).json({ error: 'Email not found' });
-      }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
 
-      const token1 = req.cookies.token;
-      console.log("token1:", token1);
-      if (token1) {
-        return jwt.verify(token1, process.env.JWT_SECRET, (err, decodedUser) => {
-          if (!err) {
-            return res.status(200).json({ message: 'Already logged in', user: decodedUser });
-          }
-        });
-      }
-
-      /*if (!user.is_verified) {
-        return res.status(403).json({
-          error: 'Email not verified',
-          action: 'showVerificationSection',
-        });
-      }*/
-
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ error: 'Invalid password' });
-      }
-
-      const { password: _, ...userWithoutPassword } = user;
-
-      const token = jwt.sign(
-        { ...userWithoutPassword, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      res.cookie('token', token, {
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
-        path: '/'
-      });
-
-      console.log("token1:", token1);
+    const { password: _, ...userWithoutPassword } = user;
+    const token = jwt.sign(userWithoutPassword, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
 
-      res.status(200).json({ message: 'Login successful' });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+    });
 
+    console.log("Generated Token:", token);
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token: token, 
+    });
   } catch (error) {
-    console.error('Error in login:', error.message);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Error in login:", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 
 const logout = (req, res) => {
