@@ -194,7 +194,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
           {images.map((img) => (
             <tr key={img.id}>
               <td>
-                <img src={require(`../assets/images/${img.filename}`)} alt="" width="100" />
+                <img src={img.filename ? require(`../assets/images/${img.filename}`) : ""} alt="" width="100" />
               </td>
               <td>{img.category}</td>
               <td>
