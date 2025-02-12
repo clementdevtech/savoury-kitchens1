@@ -165,9 +165,9 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
           onChange={(e) => setCategory(e.target.value)}
         >
           <option value="">-- Select Category --</option>
-          <option value="Nature">Nature</option>
-          <option value="Architecture">Architecture</option>
-          <option value="Technology">Technology</option>
+          <option value="Events">Events</option>
+          <option value="Menu/Food">Menu/Food</option>
+          <option value="Decorations">Decorations </option>
         </Form.Control>
       </Form.Group>
 
@@ -194,7 +194,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
           {images.map((img) => (
             <tr key={img.id}>
               <td>
-                <img src={`/images/${img.filename}`} alt="" width="100" />
+                <img src={require(`../assets/images/${img.filename}`)} alt="" width="100" />
               </td>
               <td>{img.category}</td>
               <td>

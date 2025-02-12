@@ -77,27 +77,33 @@ const Home = () => {
 
       <section id="gallery" className="container my-5">
         <h2 className="text-center mb-4">Gallery</h2>
-        <div className="row">
-          {["Events", "Decorations", "Menu/Food"].map((category) => {
-            if (!images[category] || images[category].length === 0) return null;
-            const currentImage = images[category][currentIndexes[category]];
+        <div className="gallery-container">
+  {["Events", "Decorations", "Menu/Food"].map((category) => {
+    if (!images[category] || images[category].length === 0) return null;
+    const currentImage = images[category][currentIndexes[category]];
 
-            return (
-              <div key={category} className="col-md-4 text-center">
-                <img
-                  src={currentImage.image_url}
-                  alt={category}
-                  className="img-fluid rounded shadow"
-                  style={{ cursor: "pointer", width: "100%" }}
-                  onClick={() => handleCategoryClick(category)}
-                />
-                <div className="description mt-2">
+    return (
+      <div key={category} className="gallery-item text-center">
+        <img
+          src={require(`../assets/images/${currentImage.image_url}`)} 
+          alt={category}
+          className={`fade-in`} // Add transition class
+          onLoad={(e) => {
+            e.target.classList.remove("fade-out");
+            e.target.classList.add("fade-in");
+          }}
+          onError={(e) => console.error("Image load error:", e)}
+          style={{ cursor: "pointer" }}
+          onClick={() => handleCategoryClick(category)}
+        />
+        <div className="description mt-2">
                   <p className="text-primary">{category}</p>
-                </div>
-              </div>
-            );
-          })}
         </div>
+      </div>
+    );
+  })}
+</div>
+
       </section>
 
       <section className="reviews-section container mt-5">

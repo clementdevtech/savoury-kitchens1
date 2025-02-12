@@ -1,10 +1,11 @@
 const multer = require("multer");
 const path = require("path");
+const {pool, db} = require("../db");
 
 // Configure storage for uploaded images
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../public/images")); 
+    cb(null, path.join(__dirname, "../../frontend/src/assets/images")); 
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); 
@@ -22,7 +23,7 @@ const addImage = async (req, res) => {
   }
 
   try {
-    await pool.query("INSERT INTO gallery (filename, category) VALUES ($1, $2)", [
+    await pool.query("INSERT INTO gallery (image_url, category) VALUES ($1, $2)", [
       filename,
       category,
     ]);
@@ -47,7 +48,7 @@ const getImages = async (req, res) => {
 const deleteImage = async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query("SELECT filename FROM gallery WHERE id = $1", [id]);
+    const result = await pool.query("SELECT image_url FROM gallery WHERE id = $1", [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Image not found" });
     }
