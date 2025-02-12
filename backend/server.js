@@ -37,11 +37,11 @@ const availabilityRoutes = require("./routes/availabilityRoutes");
 
 // Use Routes
 app.use('/api/gallery', galleryRoutes);
+app.use("/api/email", emailRoutes);
 app.use('/api/testimonials', testimonialsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use("/api/email", emailRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/availability', availabilityRoutes);

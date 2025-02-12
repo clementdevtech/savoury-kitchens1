@@ -4,6 +4,6 @@ const { verifyEmail, sendVerificationEmail } = require("../controllers/emailCont
 const router = express.Router();
 
 router.post("/verify-email", verifyEmail);
-router.post("/sendcode", sendVerificationEmail);
+router.post('/sendcode', sendVerificationEmail);
 
 module.exports = router;

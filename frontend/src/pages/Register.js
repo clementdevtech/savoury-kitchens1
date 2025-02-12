@@ -33,38 +33,44 @@ const Register = () => {
 
   const validateStep = () => {
     let errors = {};
-
+  
     if (step === 1) {
       if (!user.email.match(/^\S+@\S+\.\S+$/)) errors.email = "Invalid email format";
       if (user.name.trim().length < 3) errors.name = "Username must be at least 3 characters";
       if (userExists) errors.email = "User already exists. Please login or use a different email.";
     }
-
+  
     if (step === 2) {
       if (user.password.length < 8) {
         errors.password = "Password must be at least 8 characters";
       }
-    
+  
       const passwordComplexity = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=|,.<>/?]).{12,}$/;
       if (!passwordComplexity.test(user.password)) {
         errors.password = "Password must include at least one lowercase letter, one uppercase letter, one number, and one special character.";
       }
-
+  
       if (user.password !== user.confirmPassword) {
         errors.confirmPassword = "Passwords do not match";
       }
-
-      sendVerificationCode();
     }
-    
-
+  
     if (step === 3 && codeSent) {
       if (!user.code.match(/^\d{6}$/)) errors.code = "Verification code must be 6 digits";
     }
-
+  
     setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  
+    if (Object.keys(errors).length === 0) {
+      if (step === 2 && !codeSent) {
+        sendVerificationCode();
+      }
+      return true;
+    }
+  
+    return false;
   };
+  
 
   const nextStep = () => {
     if (validateStep()) {
@@ -77,35 +83,38 @@ const Register = () => {
   const togglePassword = () => setShowPassword(!showPassword);
   const toggleConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
 
-  const checkUserExists = useCallback(async () => {
-    if (user.email) {
-      try {
-        const res = await axios.post(`${API_URL}/auth/check-user`, {
-          email: user.email,
-          name: user.name,
-        });
-  
-        setUserExists(res.data.exists);
-        setError(res.data.exists ? "User already exists. Please login or use a different email." : "");
-      } catch (err) {
-        setError(err.response?.data?.message || "Error checking user");
-        setUserExists(true);
-      }
-    }
-  }, [user.email, user.name]);
+const checkUserExists = useCallback(async () => {
+  if (!user.email || !user.name) return;
+
+  try {
+    const res = await axios.post(`${API_URL}/auth/check-user`, {
+      email: user.email,
+      name: user.name,
+    });
+
+    setUserExists(res.data.exists);
+    setError(res.data.exists ? "User already exists. Please login or use a different email." : "");
+  } catch (err) {
+    console.error("Error checking user:", err.response?.data?.message || err.message);
+    setUserExists(true);
+  }
+}, [user.email, user.name]);
+
   
   const sendVerificationCode = useCallback(async () => {
-    console.log('sending code');
+    console.log('Attempting to send verification code to:', user.email);
     setLoading(true);
     try {
       await axios.post(`${API_URL}/email/sendcode`, { email: user.email });
+      console.log('Code sent successfully');
       setCodeSent(true);
-      setLoading(false);
     } catch (err) {
+      console.error('Failed to send code:', err.response?.data?.message || err.message);
       setError(err.response?.data?.message || "Failed to send code");
-      setLoading(false);
     }
-  }, [user.email]); 
+    setLoading(false);
+  }, [user.email]);
+
 
 
 

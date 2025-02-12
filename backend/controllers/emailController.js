@@ -36,6 +36,7 @@ const sendEmail = async (to, subject, htmlContent) => {
 // **Send Email Verification (Link + Code)**
 const sendVerificationEmail = async (req, res) => {
   const { email } = req.body;
+  console.log("email:", email);
 
   if (!email || !email.match(/^\S+@\S+\.\S+$/)) {
     return res.status(400).json({ message: "Invalid email format." });
@@ -44,10 +45,10 @@ const sendVerificationEmail = async (req, res) => {
   try {
     // Check if user exists
     const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (user.rows.length === 0) {
-      return res.json({ message: "User not found. Redirecting to registration.", redirect: "/register" });
-    }
+    console.log("email check point1:", email);
 
+    
+    console.log("email check point2:", email);
     // Generate a short verification token & code
     const verificationToken = crypto.randomUUID();
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code

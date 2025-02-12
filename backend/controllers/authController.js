@@ -33,16 +33,20 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new user (set verified to false initially)
-    await db("users").insert({
-      email,
-      username: name,
-      password: hashedPassword,
-      verified: false,
-    });
+    const [newUser] = await db("users")
+    .insert({
+        email,
+        username: name,
+        password: hashedPassword,
+        verified: false,
+    })
+    .returning(["id", "email", "username"]);
 
-    return res.status(201).json({
-      message: "User registered successfully. Proceed to verification.",
-    });
+   return res.status(201).json({
+    message: "User registered successfully. Proceed to verification.",
+    user: newUser,
+});
+
   } catch (error) {
     console.error("Registration Error:", error);
     return res.status(500).json({ message: "Internal Server Error" });
