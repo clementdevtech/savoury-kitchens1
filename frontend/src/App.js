@@ -16,6 +16,8 @@ import Recovery from "./pages/ForgotPassword";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AboutUs from "./pages/AboutUs";
+import ProtectedRoute from "./components/ProtectedRoute";  
+import Unauthorized from "./pages/Unauthorized"; 
 
 function App() {
   return (
@@ -31,11 +33,16 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/email-verification" element={<EmailVerification />} />
-        <Route path="/admin" element={<AdminPage />} />
         <Route path="/forgot-password" element={<Recovery />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Protected Admin Route */}
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
       </Routes>
       <Footer />
     </Router>

@@ -79,7 +79,7 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/gettestimonials`);
+      const res = await axios.get(`${API_URL}/gettestimonials/gettestimonials`);
       setReviews(res.data);
     } catch (err) {
       console.error("Error fetching reviews:", err.message);
