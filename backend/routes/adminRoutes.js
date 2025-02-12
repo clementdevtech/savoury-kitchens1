@@ -1,5 +1,5 @@
 const express = require("express");
-const { addImage, deleteImage, getImages } = require("../controllers/galleryController");
+const { addImage, getImages, deleteImage, upload } = require("../controllers/galleryController");
 const testimonialsController = require("../controllers/reviewController");
 const { getBookings, respondToBooking } = require("../controllers/bookingController");
 const { updateAvailability, getAvailability } = require("../controllers/availabilityController");
@@ -7,9 +7,9 @@ const { updateAvailability, getAvailability } = require("../controllers/availabi
 const router = express.Router();
 
 
-router.post("/images", addImage);
-router.get("/images", getImages);
-router.delete("/images/:id", deleteImage);
+router.post("/gallery", upload.single("image"), addImage);
+router.get("/gallery/getimages", getImages);
+router.delete("/gallery/:id", deleteImage);
 
 // Review Management
 router.get('/gettestimonials', testimonialsController.getTestimonials);

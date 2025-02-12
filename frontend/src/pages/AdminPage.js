@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { Button, Table, Form, Spinner, Alert } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -8,6 +9,7 @@ const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/admin";
 
 const AdminPage = () => {
   const [images, setImages] = useState([]);
+  const [category, setCategory] = useState("");
   const [reviews, setReviews] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [dates, setDates] = useState({
@@ -22,15 +24,58 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Wrap API fetch calls inside `useCallback` to prevent unnecessary re-renders
-  const fetchImages = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API_URL}/images`);
-      setImages(res.data);
-    } catch (err) {
-      console.error("Error fetching images:", err.message);
-    }
-  }, []);
+ 
+ // Fetch images
+ const fetchImages = useCallback(async () => {
+  try {
+    const res = await axios.get(`${API_URL}/gallery/getimages`);
+    setImages(res.data);
+  } catch (err) {
+    console.error("Error fetching images:", err.message);
+  }
+}, []);
+
+useEffect(() => {
+  fetchImages();
+}, [fetchImages]);
+
+// Handle image upload
+const onDrop = async (acceptedFiles) => {
+  if (!category) {
+    alert("Please select a category before uploading.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("image", acceptedFiles[0]);
+  formData.append("category", category);
+
+  try {
+    await axios.post(`${API_URL}/gallery`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    fetchImages(); 
+    alert("✅ Image uploaded successfully!");
+  } catch (err) {
+    console.error("Error uploading image:", err.message);
+    setError("Failed to upload image.");
+  }
+};
+
+// Handle image deletion
+const handleDeleteImage = async (id) => {
+  try {
+    await axios.delete(`${API_URL}/gallery/${id}`);
+    fetchImages(); // Refresh images after deletion
+    alert("✅ Image deleted successfully!");
+  } catch (err) {
+    console.error("Error deleting image:", err.message);
+    setError("Failed to delete image.");
+  }
+};
+
+// Dropzone for Drag-and-Drop
+const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -77,15 +122,7 @@ const AdminPage = () => {
     fetchData();
   }, [fetchData]);
 
-  // ✅ Handle image deletion and refresh images list
-  const handleDeleteImage = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/images/${id}`);
-      fetchImages();
-    } catch (err) {
-      console.error("Error deleting image:", err.message);
-    }
-  };
+
 
   // ✅ Handle booking response (approve/reject)
   const handleRespondBooking = async (id, response) => {
@@ -118,21 +155,46 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Manage Images Section */}
-      <h3>Manage Images</h3>
+ {/* Image Upload Section */}
+ <h3>Upload New Image</h3>
+      <Form.Group>
+        <Form.Label>Select Category</Form.Label>
+        <Form.Control
+          as="select"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="">-- Select Category --</option>
+          <option value="Nature">Nature</option>
+          <option value="Architecture">Architecture</option>
+          <option value="Technology">Technology</option>
+        </Form.Control>
+      </Form.Group>
+
+      <div
+        {...getRootProps()}
+        className={`dropzone mt-3 p-3 text-center ${isDragActive ? "active" : ""}`}
+        style={{ border: "2px dashed #ccc", cursor: "pointer" }}
+      >
+        <input {...getInputProps()} />
+        {isDragActive ? <p>Drop the image here...</p> : <p>Drag & drop an image or click to browse</p>}
+      </div>
+
+      {/* Display Uploaded Images */}
+      <h3 className="mt-4">Gallery Images</h3>
       <Table striped bordered hover>
         <thead>
           <tr>
             <th>Image</th>
             <th>Category</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {images.map((img) => (
             <tr key={img.id}>
               <td>
-                <img src={img.url} alt="" width="100" />
+                <img src={`/images/${img.filename}`} alt="" width="100" />
               </td>
               <td>{img.category}</td>
               <td>
@@ -144,6 +206,7 @@ const AdminPage = () => {
           ))}
         </tbody>
       </Table>
+
 
       {/* Manage Reviews Section */}
       <h3>Sort & Respond to Reviews</h3>
