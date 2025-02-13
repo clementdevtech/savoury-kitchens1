@@ -87,7 +87,7 @@ const Home = () => {
         <img
           src={require(`../assets/images/${currentImage.image_url}`)} 
           alt={category}
-          className={`fade-in`} // Add transition class
+          className={`fade-in`}
           onLoad={(e) => {
             e.target.classList.remove("fade-out");
             e.target.classList.add("fade-in");

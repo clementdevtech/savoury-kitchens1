@@ -6,7 +6,6 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const BookingPage = () => {
   const [availableDates, setAvailableDates] = useState([]);
-  const [openDays, setOpenDays] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,16 +14,16 @@ const BookingPage = () => {
   });
 
   useEffect(() => {
-    // Fetch available dates and open days from backend
     axios.get(`${API_URL}/availability/dates`)
       .then((response) => {
-        setAvailableDates(response.data.dates);
-        setOpenDays(response.data.openDays);
+        console.log("Available Dates API Response:", response.data);
+        setAvailableDates(response.data.dates || []);
       })
       .catch((error) => {
-        console.error('Error fetching available dates!', error);
+        console.error('Error fetching available dates:', error);
       });
   }, []);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,9 +35,19 @@ const BookingPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     axios.post(`${API_URL}/bookings`, formData)
       .then(() => {
         alert('Booking successful!');
+
+        // ✅ Mark selected date as booked in the database
+        axios.put(`${API_URL}/admin/book-date`, { date: formData.date })
+          .then(() => {
+            setAvailableDates(availableDates.filter(d => d !== formData.date)); // Remove booked date
+          })
+          .catch(err => console.error('Error marking date as booked:', err));
+
+        // Reset form
         setFormData({
           name: '',
           email: '',
@@ -56,13 +65,6 @@ const BookingPage = () => {
     <div className="booking-container">
       <div className="booking-card">
         <h2 className="text-center">Catering Booking</h2>
-
-        <h5 className="text-center">Open Days</h5>
-        <ul className="open-days-list">
-          {openDays.map((day, index) => (
-            <li key={index}>{day}</li>
-          ))}
-        </ul>
 
         <form onSubmit={handleSubmit} className="booking-form">
           <label htmlFor="name">Name:</label>
@@ -86,16 +88,26 @@ const BookingPage = () => {
             onChange={handleChange}
             required
           />
-
-          <label htmlFor="date">Select Date:</label>
-          <select id="date" name="date" value={formData.date} onChange={handleChange} required>
+         <label htmlFor="date">Select Date:</label>
+         <select id="date" name="date" value={formData.date} onChange={handleChange} required>
             <option value="">Select a date</option>
-            {availableDates.map((date) => (
-              <option key={date.id} value={date.date}>
-                {date.date}
-              </option>
-            ))}
+              {availableDates.length > 0 ? (
+                    availableDates.map((dateObj, index) => {
+                            const date = new Date(dateObj.date);
+                            const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+                              .toString().padStart(2, "0")}/${date.getFullYear()} ${date.toLocaleDateString('en-US', { weekday: 'short' })}`;
+                return (
+                  <option key={index} value={dateObj.date}>
+                     {formattedDate}
+                  </option>
+                  );
+              })
+           ) : (
+            <option disabled>No available dates</option>
+          )}
           </select>
+
+
 
           <label htmlFor="numberOfGuests">Number of Guests:</label>
           <input

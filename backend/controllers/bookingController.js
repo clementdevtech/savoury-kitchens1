@@ -6,8 +6,14 @@ require("dotenv").config();
 const getBookings = async (req, res) => {
   try {
     const bookings = await pool.query("SELECT * FROM bookings ORDER BY created_at DESC");
-    res.json(bookings.rows);
+
+    if (!bookings.rows.length) {
+      console.warn("⚠ No bookings found.");
+    }
+
+    res.json({ bookings: bookings.rows });
   } catch (err) {
+    console.error("Error fetching bookings:", err.message);
     res.status(500).json({ message: "Error fetching bookings" });
   }
 };
