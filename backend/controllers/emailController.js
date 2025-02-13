@@ -33,6 +33,60 @@ const sendEmail = async (to, subject, htmlContent) => {
   }
 };
 
+
+
+// Admin Can Send Custom Emails to Users
+const sendAdminEmail = async (req, res) => {
+  const { email, subject, message } = req.body;
+
+  if (!email || !subject || !message) {
+    return res.status(400).json({ message: "Missing email, subject, or message." });
+  }
+
+  try {
+    const emailTemplate = `
+      <div style="background: #f8f9fa; padding: 20px; text-align: center;">
+        <h2 style="color: #333;">Message from ${COMPANY_NAME}</h2>
+        <p style="font-size: 16px; color: #555;">${message}</p>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+        <p style="font-size: 14px; color: #999;">
+          Need help? Contact us at <a href="mailto:${SUPPORT_EMAIL}" style="color: #007bff;">${SUPPORT_EMAIL}</a>
+        </p>
+      </div>
+    `;
+
+    await sendEmail(email, subject, emailTemplate);
+    res.json({ message: "Admin message sent successfully!" });
+  } catch (error) {
+    console.error(`❌ Error sending admin email: ${error.message}`);
+    res.status(500).json({ message: "Error sending admin email." });
+  }
+};
+
+//Updated: Notify User When Booking is Updated
+const respondToBooking = async (req, res) => {
+  const { id, status, email, message } = req.body;
+
+  try {
+    await pool.query("UPDATE bookings SET status = $1 WHERE id = $2", [status, id]);
+
+    const emailContent = `
+      <p>Hello,</p>
+      <p>Your booking has been updated to: <strong>${status}</strong>.</p>
+      <p>Message from admin:</p>
+      <blockquote>${message || "No additional message provided."}</blockquote>
+      <p>Thank you.</p>
+    `;
+
+    await sendEmail(email, `Your Booking Status: ${status}`, emailContent);
+
+    res.json({ message: "Booking response sent!" });
+  } catch (err) {
+    console.error("Error responding to booking:", err.message);
+    res.status(500).json({ message: "Error updating booking status" });
+  }
+};
+
 // **Send Email Verification (Link + Code)**
 const sendVerificationEmail = async (req, res) => {
   const { email } = req.body;
@@ -188,4 +242,6 @@ module.exports = {
   sendVerificationEmail,
   verifyEmail,
   sendPasswordRecoveryEmail,
+  sendAdminEmail, 
+  respondToBooking 
 };

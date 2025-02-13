@@ -5,27 +5,21 @@ import { Button, Table, Form, Spinner, Alert } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../assets/css/Admin.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/admin";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const AdminPage = () => {
   const [images, setImages] = useState([]);
   const [category, setCategory] = useState("");
   const [reviews, setReviews] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [dates, setDates] = useState({
-    monday: true,
-    tuesday: true,
-    wednesday: true,
-    thursday: true,
-    friday: true,
-    saturday: true,
-    sunday: true,
-  });
+  const [message, setMessage] = useState({ id: null, text: "" });
+  const [emailSubject, setEmailSubject] = useState("");
+  const [dates, setDates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
  
- // Fetch images
+ //....................images...............................................
  const fetchImages = useCallback(async () => {
   try {
     const res = await axios.get(`${API_URL}/gallery/getimages`);
@@ -55,7 +49,7 @@ const onDrop = async (acceptedFiles) => {
       headers: { "Content-Type": "multipart/form-data" },
     });
     fetchImages(); 
-    alert("✅ Image uploaded successfully!");
+    alert("Image uploaded successfully!");
   } catch (err) {
     console.error("Error uploading image:", err.message);
     setError("Failed to upload image.");
@@ -66,45 +60,98 @@ const onDrop = async (acceptedFiles) => {
 const handleDeleteImage = async (id) => {
   try {
     await axios.delete(`${API_URL}/gallery/${id}`);
-    fetchImages(); // Refresh images after deletion
-    alert("✅ Image deleted successfully!");
+    fetchImages(); 
+    alert("Image deleted successfully!");
   } catch (err) {
     console.error("Error deleting image:", err.message);
     setError("Failed to delete image.");
   }
 };
 
-// Dropzone for Drag-and-Drop
 const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/gettestimonials/gettestimonials`);
+      const res = await axios.get(`${API_URL}/testimonials/gettestimonials`);
       setReviews(res.data);
     } catch (err) {
       console.error("Error fetching reviews:", err.message);
     }
   }, []);
 
+  //....................bookings...............................................
   const fetchBookings = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/bookings`);
-      setBookings(res.data);
+      setBookings(res.data.bookings || []);
     } catch (err) {
       console.error("Error fetching bookings:", err.message);
     }
   }, []);
-
+  
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+  
+  //Admin Responds to Booking (Approve/Reject + Message)
+  const handleRespondBooking = async (id, status, email) => {
+    try {
+      await axios.put(`${API_URL}/bookings/${id}`, {
+        status,
+        email,
+        message: message.text || "No message from admin.",
+      });
+  
+      alert("Response sent successfully!");
+      setMessage({ id: null, text: "" });
+      fetchBookings();
+    } catch (err) {
+      console.error("Error responding to booking:", err.message);
+    }
+  };
+  
+  //Admin Sends Custom Email
+  const handleSendAdminEmail = async (email) => {
+    try {
+      await axios.post(`${API_URL}/admin-email`, {
+        email,
+        subject: emailSubject,
+        message: message.text,
+      });
+  
+      alert("Email sent successfully!");
+      setEmailSubject("");
+      setMessage({ id: null, text: "" });
+    } catch (err) {
+      console.error("Error sending admin email:", err.message);
+    }
+  };
+  
+  
+//...........................availability dates...............................
   const fetchAvailability = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/dates`);
-      setDates(res.data);
+      const res = await axios.get(`${API_URL}/availability/dates`);
+      console.log("Available Dates API Response:", res.data); 
+  
+      if (res.data.dates.length === 0) {
+        const today = new Date();
+        const next30Days = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(today.getDate() + i);
+          return { date: date.toISOString().split("T")[0], booked: false };
+        });
+  
+        setDates(next30Days);
+      } else {
+        setDates(res.data.dates);
+      }
     } catch (err) {
       console.error("Error fetching availability:", err.message);
     }
   }, []);
 
-  // ✅ Fetch all data once when the component mounts
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -117,33 +164,31 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
     }
   }, [fetchImages, fetchReviews, fetchBookings, fetchAvailability]);
 
-  // ✅ Ensures `fetchData` runs only once when component mounts
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
 
-
-  // ✅ Handle booking response (approve/reject)
-  const handleRespondBooking = async (id, response) => {
-    try {
-      await axios.put(`${API_URL}/bookings/${id}`, { status: response });
-      fetchBookings();
-    } catch (err) {
-      console.error("Error responding to booking:", err.message);
-    }
+  
+  const toggleDateStatus = (index) => {
+    setDates((prevDates) => {
+      const newDates = [...prevDates];
+      newDates[index].booked = !newDates[index].booked;
+      return newDates;
+    });
   };
 
-  // ✅ Handle availability updates
-  const handleUpdateAvailability = async () => {
+
+  //Handle availability updates
+  const saveAvailability = async () => {
     try {
-      await axios.put(`${API_URL}/dates`, dates);
-      alert("✅ Availability updated successfully!");
+      await axios.put(`${API_URL}/admin/dates`, { dates });
+      alert("Availability updated successfully!");
     } catch (err) {
       console.error("Error updating availability:", err.message);
     }
   };
-
   return (
     <div className="container mt-5">
       <h2>Admin Panel</h2>
@@ -194,7 +239,10 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
           {images.map((img) => (
             <tr key={img.id}>
               <td>
-                <img src={img.filename ? require(`../assets/images/${img.filename}`) : ""} alt="" width="100" />
+              {img.filename ? (<img src={require(`../assets/images/${img.filename}`)} alt={img.category || "Gallery item"} width="100" />
+              ) : (
+                <span>No Image Available</span>
+              )}
               </td>
               <td>{img.category}</td>
               <td>
@@ -234,53 +282,88 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
       {/* Manage Bookings Section */}
       <h3>Manage Bookings</h3>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Booking</th>
-            <th>Respond</th>
+    <Table striped bordered hover>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {bookings.map((booking) => (
+          <tr key={booking.id}>
+            <td>{booking.name}</td>
+            <td>{booking.email}</td>
+            <td>{new Date(booking.date).toLocaleDateString()}</td>
+            <td>{booking.status}</td>
+            <td>
+              <Form.Control
+                type="text"
+                placeholder="Enter message..."
+                value={message.id === booking.id ? message.text : ""}
+                onChange={(e) => setMessage({ id: booking.id, text: e.target.value })}
+              />
+              <Button
+                variant="success"
+                className="mt-2"
+                onClick={() => handleRespondBooking(booking.id, "Approved", booking.email)}
+              >
+                Approve
+              </Button>
+              <Button
+                variant="danger"
+                className="mt-2"
+                onClick={() => handleRespondBooking(booking.id, "Rejected", booking.email)}
+              >
+                Reject
+              </Button>
+              <Button
+                variant="primary"
+                className="mt-2"
+                onClick={() => handleSendAdminEmail(booking.email)}
+              >
+                Send Email
+              </Button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {bookings.map((booking) => (
-            <tr key={booking.id}>
-              <td>{booking.details}</td>
-              <td>
-                <Button
-                  variant="success"
-                  className="me-2"
-                  onClick={() => handleRespondBooking(booking.id, "Approved")}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleRespondBooking(booking.id, "Rejected")}
-                >
-                  Reject
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+        ))}
+      </tbody>
+    </Table>
 
       {/* Update Availability Section */}
-      <h3>Update Availability</h3>
-      <Form>
-        {Object.keys(dates).map((day) => (
-          <Form.Check
-            type="checkbox"
-            key={day}
-            label={day.charAt(0).toUpperCase() + day.slice(1)}
-            checked={dates[day]}
-            onChange={() => setDates((prev) => ({ ...prev, [day]: !prev[day] }))}
-          />
+      <h3>Manage Availability (Next 30 Days)</h3>
+    <Table striped bordered hover className="mt-4">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Toggle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {dates.map((dateObj, index) => (
+          <tr key={index}>
+            <td>{new Date(dateObj.date).toLocaleDateString()}</td>
+            <td>{dateObj.booked ? "❌ Booked" : "✅ Available"}</td>
+            <td>
+              <Button
+                variant={dateObj.booked ? "danger" : "success"}
+                onClick={() => toggleDateStatus(index)}
+              >
+                {dateObj.booked ? "Mark Available" : "Mark Booked"}
+              </Button>
+            </td>
+          </tr>
         ))}
-      </Form>
-      <Button className="mt-3" onClick={handleUpdateAvailability}>
-        Update Availability
-      </Button>
+      </tbody>
+    </Table>
+
+    <Button className="mt-3" onClick={saveAvailability}>
+      Save Changes
+    </Button>
     </div>
   );
 };

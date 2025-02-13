@@ -2,7 +2,7 @@ const express = require("express");
 const { addImage, getImages, deleteImage, upload } = require("../controllers/galleryController");
 const testimonialsController = require("../controllers/reviewController");
 const { getBookings, respondToBooking } = require("../controllers/bookingController");
-const { updateAvailability, getAvailability } = require("../controllers/availabilityController");
+const { getAvailability, bookDate, updateAvailability } = require("../controllers/availabilityController");
 
 const router = express.Router();
 
@@ -21,5 +21,6 @@ router.put("/bookings/:id", respondToBooking);
 // Availability Management
 router.get("/dates", getAvailability);
 router.put("/dates", updateAvailability);
+router.put("/book-date", bookDate);
 
 module.exports = router;
