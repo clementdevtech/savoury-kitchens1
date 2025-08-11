@@ -41,7 +41,7 @@ const TermsOfService = () => {
 
       <h2>7. Contact Information</h2>
       <p>
-        If you have any questions, contact us at <strong>support@afrikuizine.com.au</strong>.
+        If you have any questions, contact us at <strong>afrikuizine.@gmail.com</strong>.
       </p>
     </div>
   );

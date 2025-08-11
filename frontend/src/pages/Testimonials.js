@@ -28,7 +28,7 @@ const Testimonials = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_URL, offset]); // Added dependencies to avoid useEffect warnings
+  }, [API_URL, offset]);
 
   // Handle submitting a testimonial
   const handleSubmit = async (e) => {

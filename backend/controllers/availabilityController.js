@@ -1,7 +1,7 @@
 const { pool } = require("../db");
 require("dotenv").config();
 
-// Get Availability 
+// Get Availability
 const getAvailability = async (req, res) => {
   try {
     console.log('Fetching available dates for the next month...');
@@ -10,39 +10,48 @@ const getAvailability = async (req, res) => {
     const nextMonth = new Date();
     nextMonth.setDate(today.getDate() + 30);
 
-    //Insert the next 30 days if they don't already exist
+    const insertPromises = [];
     for (let i = 0; i < 30; i++) {
-      let date = new Date();
+      const date = new Date();
       date.setDate(today.getDate() + i);
-      let formattedDate = date.toISOString().split("T")[0];
+      const formattedDate = date.toISOString().split("T")[0];
 
-      await pool.query(
-        "INSERT INTO available_dates (date, booked) VALUES ($1, false) ON CONFLICT (date) DO NOTHING",
-        [formattedDate]
+      insertPromises.push(
+        pool.query(
+          `INSERT INTO available_dates (date, booked) VALUES ($1, false) 
+           ON CONFLICT (date) DO NOTHING`,
+          [formattedDate]
+        )
       );
     }
+    await Promise.all(insertPromises);
 
-    //Fetch the updated list of dates
-    const availability = await pool.query(
-      "SELECT date, booked FROM available_dates WHERE date BETWEEN $1 AND $2 ORDER BY date ASC",
+    const { rows } = await pool.query(
+      `SELECT date, booked 
+       FROM available_dates 
+       WHERE date BETWEEN $1 AND $2 
+       ORDER BY date ASC`,
       [today.toISOString().split("T")[0], nextMonth.toISOString().split("T")[0]]
     );
 
-    res.json({ dates: availability.rows });
+    res.json({ dates: rows });
   } catch (err) {
     console.error('Error fetching availability:', err.message);
     res.status(500).json({ message: "Error fetching availability" });
   }
 };
 
-
-// Mark a Date as Booked
+// Book a Date
 const bookDate = async (req, res) => {
   const { date } = req.body;
+  if (!date) return res.status(400).json({ message: "Date is required" });
 
   try {
     const result = await pool.query(
-      "UPDATE available_dates SET booked = true WHERE date = $1 RETURNING *",
+      `UPDATE available_dates 
+       SET booked = true 
+       WHERE date = $1 AND booked = false 
+       RETURNING *`,
       [date]
     );
 
@@ -57,15 +66,17 @@ const bookDate = async (req, res) => {
   }
 };
 
-// ✅ Admin Updates Available Dates
+// Update Availability (Admin)
 const updateAvailability = async (req, res) => {
   const { dates } = req.body;
+  if (!Array.isArray(dates)) return res.status(400).json({ message: "Dates array is required" });
 
   try {
-    await pool.query("DELETE FROM available_dates");
-    for (let date of dates) {
-      await pool.query("INSERT INTO available_dates (date, booked) VALUES ($1, false)", [date]);
-    }
+    await pool.query("TRUNCATE available_dates");
+    const insertPromises = dates.map(date =>
+      pool.query("INSERT INTO available_dates (date, booked) VALUES ($1, false)", [date])
+    );
+    await Promise.all(insertPromises);
 
     res.json({ message: "Availability updated successfully!" });
   } catch (err) {

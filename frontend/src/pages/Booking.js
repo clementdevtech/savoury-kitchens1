@@ -43,7 +43,7 @@ const BookingPage = () => {
         // ✅ Mark selected date as booked in the database
         axios.put(`${API_URL}/admin/book-date`, { date: formData.date })
           .then(() => {
-            setAvailableDates(availableDates.filter(d => d !== formData.date)); // Remove booked date
+            setAvailableDates(availableDates.filter(d => d !== formData.date));
           })
           .catch(err => console.error('Error marking date as booked:', err));
 

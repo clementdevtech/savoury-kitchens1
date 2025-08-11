@@ -97,20 +97,26 @@ const sendVerificationEmail = async (req, res) => {
   }
 
   try {
-    // Check if user exists
-    const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    console.log("email check point1:", email);
+    // Ensure email exists in users table (for FK constraint)
+    const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
 
-    
-    console.log("email check point2:", email);
-    // Generate a short verification token & code
+    if (userCheck.rows.length === 0) {
+      // Insert minimal placeholder user to satisfy FK
+      await pool.query(
+         `INSERT INTO users (email, username, password, verified) 
+         VALUES ($1, $2, $3, false)`,
+         [email, email.split("@")[0], ""] 
+        );
+
+      console.log(`Placeholder user created for ${email}`);
+    }
+
+    // Generate token & code
     const verificationToken = crypto.randomUUID();
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
-
-    // Hash the token & code for security
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedToken = crypto.createHash("sha256").update(verificationToken).digest("hex");
 
-    // Store both token and code in the database
+    // Insert/update verification record
     await pool.query(
       `INSERT INTO email_verifications (email, token, code, expires_at) 
        VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes') 
@@ -119,10 +125,9 @@ const sendVerificationEmail = async (req, res) => {
       [email, hashedToken, verificationCode]
     );
 
-    // Create a clickable verification link
     const verificationLink = `${CLIENT_URL}/email-verification?token=${verificationToken}&email=${email}`;
 
-    // HTML email template with both the link & the 6-digit code
+    // Email template
     const emailTemplate = `
       <div style="background: #f8f9fa; padding: 20px; text-align: center;">
         <img src="${COMPANY_LOGO}" alt="${COMPANY_NAME}" style="max-width: 150px; margin-bottom: 20px;">
@@ -138,10 +143,6 @@ const sendVerificationEmail = async (req, res) => {
         <p style="font-size: 14px; color: #777; margin-top: 20px;">
           This link and code will expire in 10 minutes. If you did not request this email, please ignore it.
         </p>
-        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
-        <p style="font-size: 14px; color: #999;">
-          Need help? Contact us at <a href="mailto:${SUPPORT_EMAIL}" style="color: #007bff;">${SUPPORT_EMAIL}</a>
-        </p>
       </div>
     `;
 
@@ -153,6 +154,7 @@ const sendVerificationEmail = async (req, res) => {
     res.status(500).json({ message: "Error sending verification email." });
   }
 };
+
 
 // **Verify Email (Token or Code)**
 const verifyEmail = async (req, res) => {

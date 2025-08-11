@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -19,10 +19,24 @@ import AboutUs from "./pages/AboutUs";
 import ProtectedRoute from "./components/ProtectedRoute";  
 import Unauthorized from "./pages/Unauthorized"; 
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+
+  // Pages where Navbar & Footer should be hidden
+  const hideLayoutOn = [
+    "/register",
+    "/login",
+    "/email-verification",
+    "/unauthorized",
+    "/terms-of-service",
+    "/privacy-policy"
+  ];
+
+  const shouldHideLayout = hideLayoutOn.includes(location.pathname);
+
   return (
-    <Router>
-      <Navbar />
+    <>
+      {!shouldHideLayout && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
@@ -44,7 +58,15 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Routes>
-      <Footer />
+      {!shouldHideLayout && <Footer />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

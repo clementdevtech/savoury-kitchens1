@@ -36,7 +36,7 @@ const PrivacyPolicy = () => {
 
       <h2>6. Your Rights</h2>
       <p>
-        You have the right to access, update, or delete your data. Contact us at <strong>support@savourykitchens.co.ke</strong> for assistance.
+        You have the right to access, update, or delete your data. Contact us at <strong>afriquizines@gmail.com</strong> for assistance.
       </p>
 
       <h2>7. Changes to Policy</h2>
@@ -46,7 +46,7 @@ const PrivacyPolicy = () => {
 
       <h2>8. Contact Us</h2>
       <p>
-        If you have any questions, reach out to <strong>support@savourykitchens.co.ke</strong>.
+        If you have any questions, reach out to <strong>afriquizines@gmail.com</strong>.
       </p>
     </div>
   );
