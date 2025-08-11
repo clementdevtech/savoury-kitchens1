@@ -5,7 +5,7 @@ const TermsOfService = () => {
   return (
     <div className="terms-container">
       <h1>Terms of Service</h1>
-      <p>Last updated: 06 February 2025</p>
+      <p>Last updated: 11 August 2025</p>
 
       <h2>1. Acceptance of Terms</h2>
       <p>
@@ -41,7 +41,7 @@ const TermsOfService = () => {
 
       <h2>7. Contact Information</h2>
       <p>
-        If you have any questions, contact us at <strong>support@savourykitchens.co.ke</strong>.
+        If you have any questions, contact us at <strong>support@afrikuizine.com.au</strong>.
       </p>
     </div>
   );

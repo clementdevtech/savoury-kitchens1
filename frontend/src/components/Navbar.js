@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import { Link, useLocation } from "react-router-dom";
+import { FaHome, FaServicestack, FaImage, FaInfoCircle, FaSignOutAlt, FaSignInAlt } from "react-icons/fa";
 import "../assets/css/Navbar.css";
 import logo from "../assets/images/logo.png";
 
@@ -10,52 +9,43 @@ const API_URL = process.env.REACT_APP_API_URL;
 const Navbar = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleNavbar = () => setIsOpen(!isOpen);
+  const location = useLocation();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        setLoading(true); 
-    
         const token = localStorage.getItem("token");
         if (!token) {
-          console.error("No token found");
-          setLoading(false); 
+          setLoading(false);
           return;
         }
-    
-        const response = await fetch(`${API_URL}/users/getuser`, {
+
+        const res = await fetch(`${API_URL}/users/getuser`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         });
-    
-        if (!response.ok) throw new Error("Unauthorized");
-    
-        const data = await response.json();
+
+        if (!res.ok) throw new Error("Unauthorized");
+
+        const data = await res.json();
         setUser(data);
       } catch (err) {
-        console.error("Authentication Error:", err);
+        console.error("Auth Error:", err);
         setUser(null);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
-    };    
+    };
 
     fetchUser();
   }, []);
 
   const handleLogout = async () => {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-
+      await fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" });
       setUser(null);
     } catch (err) {
       console.error("Logout failed:", err);
@@ -63,45 +53,56 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="container">
-        <Link className="navbar-brand d-flex align-items-center" to="/">
-          <img src={logo} alt="Logo" className="navbar-logo" />
-          <span className="ms-2">Savoury Kitchens</span>
-        </Link>
-        <span
-          className="navbar-toggler"
-          onClick={toggleNavbar}
-          style={{ border: "none", outline: "none", padding: "5px" }}
-        >
-          <span className="navbar-toggler-icon"></span>
-        </span>
-        <div className={`collapse navbar-collapse ${isOpen ? "show" : ""}`} id="navbarNav">
-          <ul className="navbar-nav ms-auto">
-            <li className="nav-item"><Link className="nav-link" to="/services">Services</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/gallery">Gallery</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/testimonials">Testimonials</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/about-us">About Us</Link></li>
-
-            {/* Admin Section */}
-            {user?.role === "admin" && (
-              <li className="nav-item"><Link className="nav-link" to="/admin">Admin</Link></li>
+    <>
+      {/* Desktop / Large screen navbar */}
+      <nav className="main-navbar desktop-navbar">
+        <div className="nav-container">
+          <Link to="/" className="nav-logo">
+            <img src={logo} alt="Logo" />
+            <span>Afrikuizine Delights</span>
+          </Link>
+          <ul className="nav-links">
+            <li><Link className={location.pathname === "/" ? "active" : ""} to="/"><FaHome /> Home</Link></li>
+            <li><Link to="/services"><FaServicestack /> Services</Link></li>
+            <li><Link to="/gallery"><FaImage /> Gallery</Link></li>
+            <li><Link to="/about-us"><FaInfoCircle /> About</Link></li>
+            {loading ? (
+              <li><span>Loading...</span></li>
+            ) : user ? (
+              <li><button className="logout-btn" onClick={handleLogout}><FaSignOutAlt /> Logout</button></li>
+            ) : (
+              <li><Link to="/login"><FaSignInAlt /> Login</Link></li>
             )}
-
-            {/* Login/Logout Button */}
-            <li className="nav-item">
-              {loading ? (
-                <span className="nav-link text-light">Loading...</span>
-              ) : user ? (
-                <button className="nav-link btn btn-link text-white" onClick={handleLogout}>Logout</button>
-              ) : (
-                <Link className="nav-link" to="/login">Login</Link>
-              )}
-            </li>
           </ul>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Mobile / Small screen split-navbar */}
+      <nav className="split-navbar mobile-navbar">
+        <div className="nav-side left-links">
+          <Link to="/" className={location.pathname === "/" ? "active" : ""}><FaHome /><span>Home</span></Link>
+          <Link to="/services"><FaServicestack /><span>Services</span></Link>
+        </div>
+
+        <div className="nav-center">
+          <Link to="/" className="logo-link">
+            <img src={logo} alt="Logo" className="nav-logo" />
+          </Link>
+        </div>
+
+        <div className="nav-side right-links">
+          <Link to="/gallery"><FaImage /><span>Gallery</span></Link>
+          <Link to="/about-us"><FaInfoCircle /><span>About</span></Link>
+          {loading ? (
+            <span>Loading...</span>
+          ) : user ? (
+            <button onClick={handleLogout} className="nav-btn"><FaSignOutAlt /><span>Logout</span></button>
+          ) : (
+            <Link to="/login"><FaSignInAlt /><span>Login</span></Link>
+          )}
+        </div>
+      </nav>
+    </>
   );
 };
 

@@ -67,7 +67,7 @@ const Home = () => {
     <>
       <section className="hero">
         <div className="screen text-center text-white">
-          <h1>Welcome to Savoury Kitchens</h1>
+          <h1>Welcome to Afrikuizine Delights</h1>
           <p>
             We provide top-tier catering, event decoration, public address, and
             event planning services.
